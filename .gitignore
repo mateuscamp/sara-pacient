@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.py[oc]
+build/
+dist/
+*.egg-info
+.ruff_cache/
+.pytest_cache/
+# Casos reais de estudo e pacotes gerados ficam fora: só exemplos montados entram (AGENTS.md, Dados).
+casos/
+pacotes/

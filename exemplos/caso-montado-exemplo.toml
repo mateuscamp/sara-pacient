@@ -1,0 +1,62 @@
+# Caso MONTADO, para teste e demonstração: não vem de relato publicado.
+# Formato: ADR-0002. Cada fato tem id único, secao e revelacao; a secao decide o que o ator vê.
+
+id = "exemplo-montado-insonia"
+especialidade = "psiquiatria"
+abertura = """
+Ambulatório, primeira consulta. Homem de 42 anos, vem sozinho.
+Queixa: "Faz um mês que eu não durmo direito e já não aguento mais."
+"""
+
+[fonte]
+montado = true
+origem = "Montado a partir dos critérios de episódio depressivo do DSM-5-TR, para exemplo."
+
+[[fatos]]
+id = "insonia-terminal"
+secao = "paciente_diz"
+texto = "Acorda às 4 da manhã todos os dias e não consegue voltar a dormir."
+revelacao = "espontaneo"
+
+[[fatos]]
+id = "perda-de-interesse"
+secao = "paciente_diz"
+texto = "Parou de jogar futebol com os amigos, que era o que mais gostava; diz que perdeu a graça."
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "alcool-noturno"
+secao = "paciente_diz"
+texto = "Bebe três doses de cachaça à noite para tentar dormir."
+revelacao = "condicional"
+condicao = "Só conta se perguntarem sobre bebida duas vezes; na primeira, diz que bebe socialmente."
+
+[[fatos]]
+id = "aparencia"
+secao = "observavel"
+texto = "Barba por fazer, roupa limpa, olha pouco para o entrevistador, fala baixa e lenta."
+revelacao = "espontaneo"
+
+[[fatos]]
+id = "ideacao-passiva"
+secao = "risco"
+texto = "Às vezes pensa que seria melhor não acordar; nega plano e nega tentativa anterior."
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "tsh-normal"
+secao = "exame_complementar"
+texto = "TSH normal, colhido há duas semanas pelo clínico."
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "diagnostico"
+secao = "diagnostico_autores"
+texto = "Episódio depressivo maior, moderado, sem sintomas psicóticos; uso de álcool a investigar."
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "pontos-chave"
+secao = "pontos_chave"
+texto = "Achar o álcool (condicional) e a ideação passiva; excluir hipotireoidismo."
+revelacao = "se_perguntado"
