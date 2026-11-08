@@ -3,6 +3,8 @@ name = "sara-pacient"
 version = "0.1.0"
 description = "Paciente simulado a partir de relato de caso real: caso estruturado, pacote do ator sem spoiler e auditoria da transcrição"
 readme = "README.md"
+license = "AGPL-3.0-or-later"
+license-files = ["LICENSE"]
 authors = [
     { name = "Mateus Campelo", email = "mateuscampelob@gmail.com" }
 ]
