@@ -1,6 +1,6 @@
 # 0004 — O sara-pacient cobre psiquiatria e dor; anestesiologia fica só na skill, em texto
 
-**Status:** Aceito
+**Status:** Aceito; ampliado pelo ADR-0007 (anestesiologia entra, só como avaliação pré-anestésica)
 **Data:** 2026-11-08
 **Driver ★:** fidelidade clínica (ADR-0001)
 

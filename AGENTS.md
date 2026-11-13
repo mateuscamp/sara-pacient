@@ -28,7 +28,8 @@ Rodar `make check` antes de declarar qualquer tarefa concluída e mostrar a saí
 - Seção nova de caso: decidir a visibilidade no `match` de `visivel_ao_ator`, com teste, e ADR se
   mudar o que o ator vê.
 - Placar de auditoria só sai da validação do código; nunca conte à mão.
-- Especialidades: psiquiatria (foco) e dor (ADR-0004). Anestesiologia fica só na skill, em texto.
+- Especialidades: psiquiatria (foco), dor (ADR-0004) e anestesiologia, só a avaliação
+  pré-anestésica (ADR-0007). Crise intraoperatória não é entrevista: fica fora.
 - Regra do personagem por especialidade fica no `match` do canal, com teste; nunca no arquivo de
   caso (ADR-0006).
 - sara-aux-diag só por arquivo (`transcricao.jsonl`); nunca importe `sara` (ADR-0005).
@@ -39,7 +40,7 @@ Rodar `make check` antes de declarar qualquer tarefa concluída e mostrar a saí
 | Termo | Significa | Não usar |
 |---|---|---|
 | `Caso` | o relato estruturado, com fonte e fatos | ficha, case |
-| `Especialidade` | psiquiatria ou dor; decide as instruções do ator e o título do risco | área |
+| `Especialidade` | psiquiatria, dor ou anestesiologia (pré-anestésica); decide as instruções do ator e o título do risco | área |
 | `Fato` | uma afirmação do caso, com `id`, `secao` e `revelacao` | item, dado |
 | `Secao` | a parte do caso a que o fato pertence; decide a visibilidade | categoria |
 | gabarito | seções que o ator nunca vê: diagnóstico, releitura, conduta e desfecho, pontos-chave | spoiler (no código) |

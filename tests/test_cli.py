@@ -8,6 +8,7 @@ from sara_pacient.cli import main
 
 EXEMPLO = Path(__file__).parents[1] / "exemplos" / "caso-montado-exemplo.toml"
 EXEMPLO_DOR = Path(__file__).parents[1] / "exemplos" / "caso-montado-dor.toml"
+EXEMPLO_ANESTESIOLOGIA = Path(__file__).parents[1] / "exemplos" / "caso-montado-anestesiologia.toml"
 
 
 def _texto_de_todos(pasta: Path) -> str:
@@ -40,6 +41,21 @@ def test_pacote_de_dor_leva_as_regras_da_dor_e_nunca_o_gabarito(tmp_path: Path) 
     assert "## Sinais de alerta, remédios e substâncias, pensamentos de morte" in gerado
     assert "Lombalgia crônica" not in gerado
     assert "sem sinal de alerta" not in gerado
+
+
+def test_pacote_de_anestesiologia_leva_as_regras_dela_e_nunca_o_gabarito(tmp_path: Path) -> None:
+    # ADR-0007: caso de avaliação pré-anestésica ganha as instruções e o título de risco próprios.
+    destino = tmp_path / "pacote"
+
+    codigo = main(["pacote", str(EXEMPLO_ANESTESIOLOGIA), str(destino)])
+
+    assert codigo == 0
+    gerado = _texto_de_todos(destino)
+    assert "ficou com o corpo todo duro na mesa" in gerado
+    assert "Exame da boca e do pescoço" in gerado
+    assert "## Anestesias anteriores e na família, alergias, fumo, álcool" in gerado
+    assert "Estado físico ASA" not in gerado
+    assert "Perguntar por anestesias anteriores" not in gerado
 
 
 def test_caso_invalido_sai_com_2_e_motivo_no_stderr(

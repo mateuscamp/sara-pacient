@@ -91,9 +91,14 @@ def test_id_de_fato_e_slug_nao_vazio(id_ruim: str) -> None:
 
 
 def test_especialidade_fora_do_escopo_e_recusada() -> None:
-    # ADR-0004: o sara-pacient cobre psiquiatria e dor; anestesiologia fica só na skill, em texto.
-    with pytest.raises(EspecialidadeForaDoEscopoError, match="anestesiologia"):
-        _ = ler_especialidade("anestesiologia")
+    # ADR-0004 e ADR-0007: a lista é fechada em psiquiatria, dor e anestesiologia.
+    with pytest.raises(EspecialidadeForaDoEscopoError, match="cardiologia"):
+        _ = ler_especialidade("cardiologia")
+
+
+def test_anestesiologia_entra_no_escopo() -> None:
+    # ADR-0007: a avaliação pré-anestésica é entrevista e passa a rodar por voz.
+    assert ler_especialidade("anestesiologia").value == "anestesiologia"
 
 
 @pytest.mark.parametrize(

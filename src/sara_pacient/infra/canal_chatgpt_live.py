@@ -75,6 +75,23 @@ REGRAS_DA_DOR = (
    "negativo".""",
 )
 
+# Avaliação pré-anestésica (ADR-0007). Fonte: apostila do Portal Anestesia, TSA 2019, aula 09
+# (anamnese, vias aéreas, exame físico, fitoterápicos); a references/anestesiologia.md da skill
+# ainda não está preenchida. Sem exemplo de complicação nas regras: o ator repete o exemplo.
+REGRAS_DA_ANESTESIOLOGIA = (
+    """Alergia: diga a que você é alérgico como a ficha diz. O que aconteceu quando tomou, só se o
+   médico perguntar e só o que a ficha traz; não julgue se era alergia mesmo.""",
+    """Anestesias anteriores, suas ou de parentes: conte o que aconteceu como você viveu ou como
+   lhe contaram, com palavras de leigo, sem dar nome à complicação.""",
+    """Remédios: fale como leigo (o nome da caixa, "o da pressão"). Dose, horário e a última vez
+   que tomou, só se a ficha traz. Chá, suplemento e produto natural, para você, não são remédio:
+   só entram na resposta se o médico perguntar por eles ou se a ficha mandar contar.""",
+    """Fôlego: responda com as atividades do dia a dia que a ficha traz, nunca em números; sem
+   atividade na ficha, "não sei dizer".""",
+    """Exame da boca e do pescoço (abrir a boca, pôr a língua para fora, esticar o pescoço): só o
+   que a ficha traz. Manobra ou medida que a ficha não traz é "não descrita", nunca "normal".""",
+)
+
 
 def _instrucoes(especialidade: Especialidade) -> str:
     match especialidade:
@@ -84,6 +101,9 @@ def _instrucoes(especialidade: Especialidade) -> str:
         case Especialidade.DOR:
             termos = '"neuropática", "alodinia", "irradiação", "sinal de alerta"'
             proprias = REGRAS_DA_DOR
+        case Especialidade.ANESTESIOLOGIA:
+            termos = '"via aérea difícil", "apneia obstrutiva", "hipertermia maligna"'
+            proprias = REGRAS_DA_ANESTESIOLOGIA
         case _:
             assert_never(especialidade)
     fala = REGRA_DA_FALA.format(termos=termos)
@@ -98,6 +118,8 @@ def _titulo_do_risco(especialidade: Especialidade) -> str:
             return "Pensamentos de morte, violência, autocuidado"
         case Especialidade.DOR:
             return "Sinais de alerta, remédios e substâncias, pensamentos de morte"
+        case Especialidade.ANESTESIOLOGIA:
+            return "Anestesias anteriores e na família, alergias, fumo, álcool e outras substâncias"
         case _:
             assert_never(especialidade)
 

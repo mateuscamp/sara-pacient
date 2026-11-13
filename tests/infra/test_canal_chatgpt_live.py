@@ -126,3 +126,43 @@ def test_titulo_do_risco_e_o_da_especialidade(
     ficha = _arquivo(escrever_pacote(pacote, tmp_path / "pacote"), "paciente.md")
 
     assert f"{titulo}\n\n- Caiu duas vezes no mês." in ficha
+
+
+ALERGIA = Fato("alergia", Secao.RISCO, "Diz que é alérgico a morfina.", Revelacao.SE_PERGUNTADO)
+
+
+def test_instrucoes_de_anestesiologia_dao_os_termos_e_as_regras_dela(tmp_path: Path) -> None:
+    # ADR-0007: o paciente da pré-anestésica não diz "hipertermia maligna" nem mede o fôlego em
+    # número, e a manobra de boca e pescoço que a ficha não traz é "não descrita".
+    pacote = PacoteAtor("c1", Especialidade.ANESTESIOLOGIA, "Abertura.", (ALERGIA,))
+
+    instrucoes = _arquivo(escrever_pacote(pacote, tmp_path / "pacote"), "instrucoes.md")
+
+    assert "hipertermia maligna" in instrucoes
+    assert "Exame da boca e do pescoço" in instrucoes
+    assert "Alergia:" in instrucoes
+    assert "anedonia" not in instrucoes
+    assert "alodinia" not in instrucoes
+    assert "0 a 10" not in instrucoes
+
+
+@pytest.mark.parametrize("especialidade", [Especialidade.PSIQUIATRIA, Especialidade.DOR])
+def test_instrucoes_das_outras_nao_ganham_as_regras_da_anestesiologia(
+    especialidade: Especialidade, tmp_path: Path
+) -> None:
+    pacote = PacoteAtor("c1", especialidade, "Abertura.", (DOR_NA_LOMBAR,))
+
+    instrucoes = _arquivo(escrever_pacote(pacote, tmp_path / "pacote"), "instrucoes.md")
+
+    assert "hipertermia maligna" not in instrucoes
+    assert "Exame da boca e do pescoço" not in instrucoes
+    assert "Alergia:" not in instrucoes
+
+
+def test_titulo_do_risco_da_anestesiologia(tmp_path: Path) -> None:
+    pacote = PacoteAtor("c1", Especialidade.ANESTESIOLOGIA, "Abertura.", (ALERGIA,))
+
+    ficha = _arquivo(escrever_pacote(pacote, tmp_path / "pacote"), "paciente.md")
+
+    titulo = "## Anestesias anteriores e na família, alergias, fumo, álcool e outras substâncias"
+    assert f"{titulo}\n\n- Diz que é alérgico a morfina." in ficha

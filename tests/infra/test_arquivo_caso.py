@@ -87,9 +87,9 @@ def test_especialidade_vira_o_tipo_do_dominio(tmp_path: Path) -> None:
 
 
 def test_especialidade_fora_do_escopo_e_recusada_no_arquivo(tmp_path: Path) -> None:
-    # ADR-0004: anestesiologia fica só na skill; o arquivo não carrega.
-    corpo = CABECALHO.replace('"psiquiatria"', '"anestesiologia"') + UM_FATO
-    with pytest.raises(ArquivoDeCasoInvalidoError, match="anestesiologia"):
+    # ADR-0004 e ADR-0007: especialidade fora da lista fechada não carrega.
+    corpo = CABECALHO.replace('"psiquiatria"', '"cardiologia"') + UM_FATO
+    with pytest.raises(ArquivoDeCasoInvalidoError, match="cardiologia"):
         _ = ler_caso(_escrever(tmp_path, corpo))
 
 

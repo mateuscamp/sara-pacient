@@ -33,14 +33,16 @@ def licenca_aceita(url: str) -> bool:
 
 
 class Especialidade(StrEnum):
-    """Escopo do sara-pacient (ADR-0004): psiquiatria em foco, dor em segundo plano.
+    """Escopo do sara-pacient (ADR-0004, ADR-0007): psiquiatria em foco, dor e anestesiologia.
 
-    Anestesiologia fica só na skill casos-ai-first, em texto. A especialidade decide as instruções
-    do ator e o título da seção de risco (ADR-0006).
+    Anestesiologia é só a avaliação pré-anestésica, que é entrevista; crise intraoperatória não
+    cabe neste formato. A especialidade decide as instruções do ator e o título da seção de risco
+    (ADR-0006).
     """
 
     PSIQUIATRIA = "psiquiatria"
     DOR = "dor"
+    ANESTESIOLOGIA = "anestesiologia"
 
 
 class Secao(StrEnum):
