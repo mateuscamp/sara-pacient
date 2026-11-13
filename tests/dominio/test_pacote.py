@@ -75,3 +75,17 @@ def test_pacote_guarda_a_especialidade_como_enum_mesmo_vinda_em_texto() -> None:
     )
 
     assert pacote.especialidade is Especialidade.DOR
+
+
+def test_pacote_montado_a_mao_recusa_fato_de_gabarito() -> None:
+    # Achado D1 da review: o filtro vivia só em montar_pacote_ator; o gabarito só não chegava à
+    # ficha porque o canal não tem título para a seção.
+    gabarito = Fato("dx", Secao.DIAGNOSTICO_AUTORES, "diagnóstico", Revelacao.SE_PERGUNTADO)
+
+    with pytest.raises(ValueError, match="dx"):
+        _ = PacoteAtor("c1", Especialidade.DOR, "Abertura.", (QUEIXA, gabarito))
+
+
+def test_pacote_montado_a_mao_recusa_ficar_sem_fatos() -> None:
+    with pytest.raises(PacoteSemFatosError, match="c1"):
+        _ = PacoteAtor("c1", Especialidade.DOR, "Abertura.", ())

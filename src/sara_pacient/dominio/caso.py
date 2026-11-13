@@ -86,6 +86,10 @@ class IdDeFatoInvalidoError(CasoInvalidoError):
     """Id de fato vazio ou fora do formato slug (minúsculas, dígitos e hífen)."""
 
 
+class CampoDeFatoInvalidoError(CasoInvalidoError):
+    """Seção ou revelação de fato fora do conjunto fechado."""
+
+
 class EspecialidadeForaDoEscopoError(CasoInvalidoError):
     """Especialidade que o sara-pacient não cobre (ADR-0004)."""
 
@@ -105,6 +109,19 @@ def ler_especialidade(texto: str) -> Especialidade:
         aceitas = ", ".join(Especialidade)
         msg = f"especialidade {texto!r} fora do escopo: {aceitas}"
         raise EspecialidadeForaDoEscopoError(msg) from erro
+
+
+def _ler_campo_de_fato[Membro: StrEnum](conjunto: type[Membro], texto: str, campo: str) -> Membro:
+    """Converte o texto no membro do conjunto fechado, ou recusa dizendo os valores aceitos.
+
+    Exemplo: ``_ler_campo_de_fato(Secao, "risco", "secao")`` é ``Secao.RISCO``.
+    """
+    try:
+        return conjunto(texto)
+    except ValueError as erro:
+        aceitos = ", ".join(conjunto)
+        msg = f"{campo} {texto!r} fora do conjunto: {aceitos}"
+        raise CampoDeFatoInvalidoError(msg) from erro
 
 
 def visivel_ao_ator(secao: Secao) -> bool:
@@ -146,6 +163,11 @@ class Fato:
     condicao: str | None = None
 
     def __post_init__(self) -> None:
+        # O tipo não segura texto cru em tempo de execução, e o código compara estes dois campos
+        # por identidade (`is`): em texto, o fato sumia da ficha e a condição não era exigida.
+        object.__setattr__(self, "secao", _ler_campo_de_fato(Secao, self.secao, "secao"))
+        revelacao = _ler_campo_de_fato(Revelacao, self.revelacao, "revelacao")
+        object.__setattr__(self, "revelacao", revelacao)
         if not FORMATO_ID.fullmatch(self.id):
             msg = f"id de fato {self.id!r} fora do formato slug (ex.: 'alcool-noturno')"
             raise IdDeFatoInvalidoError(msg)

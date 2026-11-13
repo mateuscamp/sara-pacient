@@ -5,6 +5,7 @@ import pytest
 from sara_pacient.dominio.caso import (
     Caso,
     CasoComIdRepetidoError,
+    CasoInvalidoError,
     Especialidade,
     EspecialidadeForaDoEscopoError,
     Fato,
@@ -134,3 +135,45 @@ def test_caso_guarda_a_especialidade_como_enum_mesmo_vinda_em_texto() -> None:
 )
 def test_especialidade_do_escopo_e_aceita(texto: str, especialidade: Especialidade) -> None:
     assert ler_especialidade(texto) is especialidade
+
+
+def test_fato_guarda_secao_e_revelacao_como_enum_mesmo_vindas_em_texto() -> None:
+    # Achado C1 da review: o texto cru ficava `str`, e o canal filtra a ficha com
+    # `fato.secao is secao`: o fato sumia da ficha do paciente sem erro nenhum.
+    fato = Fato(
+        "f1",
+        "paciente_diz",  # pyright: ignore[reportArgumentType]  # motivo: tipo errado de propósito
+        "x",
+        "se_perguntado",  # pyright: ignore[reportArgumentType]  # motivo: tipo errado de propósito
+    )
+
+    assert fato.secao is Secao.PACIENTE_DIZ
+    assert fato.revelacao is Revelacao.SE_PERGUNTADO
+
+
+def test_fato_condicional_em_texto_cru_tambem_exige_condicao() -> None:
+    # Achado C1 da review: `"condicional" is Revelacao.CONDICIONAL` é falso, e a exigência da
+    # condição era contornada.
+    with pytest.raises(FatoCondicionalSemCondicaoError, match="f1"):
+        _ = Fato(
+            "f1",
+            Secao.PACIENTE_DIZ,
+            "x",
+            "condicional",  # pyright: ignore[reportArgumentType]  # motivo: tipo errado de propósito
+        )
+
+
+@pytest.mark.parametrize(
+    ("secao", "revelacao", "recusado"),
+    [("gabarito", "espontaneo", "gabarito"), ("paciente_diz", "sempre", "sempre")],
+)
+def test_fato_recusa_secao_ou_revelacao_fora_do_conjunto(
+    secao: str, revelacao: str, recusado: str
+) -> None:
+    with pytest.raises(CasoInvalidoError, match=recusado):
+        _ = Fato(
+            "f1",
+            secao,  # pyright: ignore[reportArgumentType]  # motivo: tipo errado de propósito
+            "x",
+            revelacao,  # pyright: ignore[reportArgumentType]  # motivo: tipo errado de propósito
+        )
