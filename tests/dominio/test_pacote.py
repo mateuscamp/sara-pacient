@@ -5,13 +5,14 @@ import pytest
 from sara_pacient.dominio.caso import (
     Caso,
     Especialidade,
+    EspecialidadeForaDoEscopoError,
     Fato,
     Fonte,
     Revelacao,
     Secao,
     visivel_ao_ator,
 )
-from sara_pacient.dominio.pacote import PacoteSemFatosError, montar_pacote_ator
+from sara_pacient.dominio.pacote import PacoteAtor, PacoteSemFatosError, montar_pacote_ator
 
 MONTADO = Fonte(montado=True, origem="teste")
 
@@ -48,3 +49,29 @@ def test_caso_sem_fato_visivel_nao_vira_pacote() -> None:
 
     with pytest.raises(PacoteSemFatosError, match="c1"):
         _ = montar_pacote_ator(_caso(gabarito))
+
+
+QUEIXA = Fato("queixa", Secao.PACIENTE_DIZ, "dor", Revelacao.ESPONTANEO)
+
+
+def test_pacote_recusa_especialidade_crua_fora_do_escopo() -> None:
+    # Achado C3 da review: o pacote inválido só estourava no canal, como AssertionError do
+    # assert_never, que a CLI não trata. A recusa é a do domínio, a mesma do Caso.
+    with pytest.raises(EspecialidadeForaDoEscopoError, match="cardiologia"):
+        _ = PacoteAtor(
+            "c1",
+            "cardiologia",  # pyright: ignore[reportArgumentType]  # motivo: tipo errado de propósito
+            "Abertura.",
+            (QUEIXA,),
+        )
+
+
+def test_pacote_guarda_a_especialidade_como_enum_mesmo_vinda_em_texto() -> None:
+    pacote = PacoteAtor(
+        "c1",
+        "dor",  # pyright: ignore[reportArgumentType]  # motivo: tipo errado de propósito
+        "Abertura.",
+        (QUEIXA,),
+    )
+
+    assert pacote.especialidade is Especialidade.DOR

@@ -2,7 +2,13 @@
 
 from dataclasses import dataclass
 
-from sara_pacient.dominio.caso import Caso, Especialidade, Fato, visivel_ao_ator
+from sara_pacient.dominio.caso import (
+    Caso,
+    Especialidade,
+    Fato,
+    ler_especialidade,
+    visivel_ao_ator,
+)
 
 
 class PacoteSemFatosError(ValueError):
@@ -17,6 +23,11 @@ class PacoteAtor:
     especialidade: Especialidade
     abertura: str
     fatos: tuple[Fato, ...]
+
+    def __post_init__(self) -> None:
+        # A mesma guarda do Caso: pacote montado à mão com texto cru fora do escopo é recusado
+        # aqui, com erro do domínio, e não no assert_never do canal; o texto válido vira o enum.
+        object.__setattr__(self, "especialidade", ler_especialidade(self.especialidade))
 
 
 def montar_pacote_ator(caso: Caso) -> PacoteAtor:

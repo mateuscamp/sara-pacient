@@ -77,13 +77,11 @@ def test_destino_que_e_arquivo_e_recusado_com_erro_proprio(tmp_path: Path) -> No
 
 def test_pacote_que_nao_vira_texto_nao_deixa_pasta_criada(tmp_path: Path) -> None:
     # Achado B1 da review: o texto era montado depois do mkdir; especialidade crua fora do escopo
-    # estourava no assert_never e deixava a pasta de destino criada e vazia.
-    pacote = PacoteAtor(
-        "c1",
-        "cardiologia",  # pyright: ignore[reportArgumentType]  # motivo: tipo errado de propósito
-        "Abertura.",
-        (INSONIA,),
-    )
+    # estourava no assert_never e deixava a pasta de destino criada e vazia. O PacoteAtor hoje
+    # recusa esse texto ao nascer (achado C3), então o pacote é adulterado depois de construído:
+    # o que se prova aqui é a ordem, texto antes da pasta, para qualquer falha ao montar o texto.
+    pacote = PacoteAtor("c1", Especialidade.PSIQUIATRIA, "Abertura.", (INSONIA,))
+    object.__setattr__(pacote, "especialidade", "cardiologia")
     destino = tmp_path / "pacote"
 
     with pytest.raises(AssertionError, match="cardiologia"):
@@ -175,14 +173,16 @@ REGRAS_PROPRIAS: dict[Especialidade, tuple[str, ...]] = {
 }
 
 # Os termos proibidos e os trechos que os quatro testes antigos de isolamento afirmavam, um por um
-# (ADR-0006, ADR-0007). Ficam como âncora: se uma tupla de regras esvaziar, o teste das tuplas
-# passa sozinho.
+# (ADR-0006, ADR-0007), mais um trecho das duas regras que nenhum outro teste fixava (achado C2
+# da review). Ficam como âncora: regra apagada da tupla passa no teste das tuplas, que compara a
+# tupla com ela mesma.
 TRECHOS_FIXOS: dict[Especialidade, tuple[str, ...]] = {
     Especialidade.PSIQUIATRIA: ("anedonia",),
-    Especialidade.DOR: ("alodinia", "0 a 10"),
+    Especialidade.DOR: ("alodinia", "0 a 10", "Manobra ou teste do exame"),
     Especialidade.ANESTESIOLOGIA: (
         "hipertermia maligna",
         "Alergia:",
+        "Anestesias anteriores, suas ou de parentes",
         "Exame da boca e do pescoço",
     ),
 }
