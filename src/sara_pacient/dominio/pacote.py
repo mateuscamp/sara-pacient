@@ -39,7 +39,10 @@ class PacoteAtor:
             msg = f"caso {self.caso_id!r}: fatos de gabarito {gabarito} não vão ao ator"
             raise GabaritoNoPacoteError(msg)
         if not self.fatos:
-            msg = f"caso {self.caso_id!r} sem fato visível ao ator: confira a seção de cada fato"
+            msg = (
+                f"caso {self.caso_id!r} sem nenhum fato visível ao ator: "
+                "confira a seção de cada fato"
+            )
             raise PacoteSemFatosError(msg)
 
 

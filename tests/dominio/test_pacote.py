@@ -12,7 +12,12 @@ from sara_pacient.dominio.caso import (
     Secao,
     visivel_ao_ator,
 )
-from sara_pacient.dominio.pacote import PacoteAtor, PacoteSemFatosError, montar_pacote_ator
+from sara_pacient.dominio.pacote import (
+    GabaritoNoPacoteError,
+    PacoteAtor,
+    PacoteSemFatosError,
+    montar_pacote_ator,
+)
 
 MONTADO = Fonte(montado=True, origem="teste")
 
@@ -82,10 +87,14 @@ def test_pacote_montado_a_mao_recusa_fato_de_gabarito() -> None:
     # ficha porque o canal não tem título para a seção.
     gabarito = Fato("dx", Secao.DIAGNOSTICO_AUTORES, "diagnóstico", Revelacao.SE_PERGUNTADO)
 
-    with pytest.raises(ValueError, match="dx"):
+    # Achado E1 da review: com ValueError aqui, trocar a exceção própria pela classe-mãe
+    # passava na suíte.
+    with pytest.raises(GabaritoNoPacoteError, match="dx"):
         _ = PacoteAtor("c1", Especialidade.DOR, "Abertura.", (QUEIXA, gabarito))
 
 
 def test_pacote_montado_a_mao_recusa_ficar_sem_fatos() -> None:
-    with pytest.raises(PacoteSemFatosError, match="c1"):
+    # Achado E5 da review: a mensagem vai ao stderr da CLI e tinha sido encurtada só para caber
+    # na linha; o texto fica fixado aqui.
+    with pytest.raises(PacoteSemFatosError, match="'c1' sem nenhum fato visível ao ator"):
         _ = PacoteAtor("c1", Especialidade.DOR, "Abertura.", ())

@@ -3,9 +3,9 @@
 import pytest
 
 from sara_pacient.dominio.caso import (
+    CampoDeFatoInvalidoError,
     Caso,
     CasoComIdRepetidoError,
-    CasoInvalidoError,
     Especialidade,
     EspecialidadeForaDoEscopoError,
     Fato,
@@ -170,7 +170,9 @@ def test_fato_condicional_em_texto_cru_tambem_exige_condicao() -> None:
 def test_fato_recusa_secao_ou_revelacao_fora_do_conjunto(
     secao: str, revelacao: str, recusado: str
 ) -> None:
-    with pytest.raises(CasoInvalidoError, match=recusado):
+    # Achado E1 da review: com a classe-mãe aqui, trocar a exceção própria por
+    # CasoInvalidoError passava na suíte.
+    with pytest.raises(CampoDeFatoInvalidoError, match=recusado):
         _ = Fato(
             "f1",
             secao,  # pyright: ignore[reportArgumentType]  # motivo: tipo errado de propósito
