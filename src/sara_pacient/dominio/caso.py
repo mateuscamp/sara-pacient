@@ -15,10 +15,6 @@ LICENCAS_ACEITAS = (
     "/licenses/by-nc-sa/",
     "/publicdomain/zero/",
 )
-# Escopo do sara-pacient (ADR-0004): psiquiatria em foco, dor em segundo plano. Anestesiologia
-# fica só na skill casos-ai-first, em texto.
-ESPECIALIDADES = ("psiquiatria", "dor")
-
 # Id de fato em slug: a auditoria (ADR-0003) cita o fato pelo id, que não pode ser vazio nem
 # ambíguo.
 FORMATO_ID = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*")
@@ -34,6 +30,19 @@ def licenca_aceita(url: str) -> bool:
         if url.startswith(host + "/"):
             return url.removeprefix(host).startswith(LICENCAS_ACEITAS)
     return False
+
+
+class Especialidade(StrEnum):
+    """Escopo do sara-pacient (ADR-0004, ADR-0007): psiquiatria em foco, dor e anestesiologia.
+
+    Anestesiologia é só a avaliação pré-anestésica, que é entrevista; crise intraoperatória não
+    cabe neste formato. A especialidade decide as instruções do ator e o título da seção de risco
+    (ADR-0006).
+    """
+
+    PSIQUIATRIA = "psiquiatria"
+    DOR = "dor"
+    ANESTESIOLOGIA = "anestesiologia"
 
 
 class Secao(StrEnum):
@@ -77,12 +86,42 @@ class IdDeFatoInvalidoError(CasoInvalidoError):
     """Id de fato vazio ou fora do formato slug (minúsculas, dígitos e hífen)."""
 
 
+class CampoDeFatoInvalidoError(CasoInvalidoError):
+    """Seção ou revelação de fato fora do conjunto fechado."""
+
+
 class EspecialidadeForaDoEscopoError(CasoInvalidoError):
     """Especialidade que o sara-pacient não cobre (ADR-0004)."""
 
 
 class CasoComIdRepetidoError(CasoInvalidoError):
     """Dois fatos com o mesmo id: a auditoria não saberia a qual a fala se liga."""
+
+
+def ler_especialidade(texto: str) -> Especialidade:
+    """Converte o texto do arquivo de caso na especialidade, ou recusa o que está fora do escopo.
+
+    Exemplo: ``ler_especialidade("dor")`` é ``Especialidade.DOR``.
+    """
+    try:
+        return Especialidade(texto)
+    except ValueError as erro:
+        aceitas = ", ".join(Especialidade)
+        msg = f"especialidade {texto!r} fora do escopo: {aceitas}"
+        raise EspecialidadeForaDoEscopoError(msg) from erro
+
+
+def _ler_campo_de_fato[Membro: StrEnum](conjunto: type[Membro], texto: str, campo: str) -> Membro:
+    """Converte o texto no membro do conjunto fechado, ou recusa dizendo os valores aceitos.
+
+    Exemplo: ``_ler_campo_de_fato(Secao, "risco", "secao")`` é ``Secao.RISCO``.
+    """
+    try:
+        return conjunto(texto)
+    except ValueError as erro:
+        aceitos = ", ".join(conjunto)
+        msg = f"{campo} {texto!r} fora do conjunto: {aceitos}"
+        raise CampoDeFatoInvalidoError(msg) from erro
 
 
 def visivel_ao_ator(secao: Secao) -> bool:
@@ -124,6 +163,11 @@ class Fato:
     condicao: str | None = None
 
     def __post_init__(self) -> None:
+        # O tipo não segura texto cru em tempo de execução, e o código compara estes dois campos
+        # por identidade (`is`): em texto, o fato sumia da ficha e a condição não era exigida.
+        object.__setattr__(self, "secao", _ler_campo_de_fato(Secao, self.secao, "secao"))
+        revelacao = _ler_campo_de_fato(Revelacao, self.revelacao, "revelacao")
+        object.__setattr__(self, "revelacao", revelacao)
         if not FORMATO_ID.fullmatch(self.id):
             msg = f"id de fato {self.id!r} fora do formato slug (ex.: 'alcool-noturno')"
             raise IdDeFatoInvalidoError(msg)
@@ -162,17 +206,16 @@ class Caso:
     """O relato estruturado: abertura, fonte e fatos."""
 
     id: str
-    especialidade: str
+    especialidade: Especialidade
     abertura: str
     fonte: Fonte
     fatos: tuple[Fato, ...]
 
     def __post_init__(self) -> None:
-        if self.especialidade not in ESPECIALIDADES:
-            msg = (
-                f"especialidade {self.especialidade!r} fora do escopo: {', '.join(ESPECIALIDADES)}"
-            )
-            raise EspecialidadeForaDoEscopoError(msg)
+        # O tipo não segura texto cru em tempo de execução: sem a recusa aqui, especialidade fora
+        # do escopo só estourava no assert_never do canal. O texto válido vira o membro do enum,
+        # para que comparar por identidade (`is`) não tome o ramo errado em silêncio.
+        object.__setattr__(self, "especialidade", ler_especialidade(self.especialidade))
         repetidos = sorted(i for i, n in Counter(f.id for f in self.fatos).items() if n > 1)
         if repetidos:
             msg = f"caso {self.id!r}: ids de fato repetidos {repetidos}"

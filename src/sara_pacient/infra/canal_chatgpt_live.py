@@ -5,11 +5,14 @@ arquivo sem abrir e conversa pelo modo de voz. Canal por API, quando vier, é ou
 """
 
 from pathlib import Path
+from typing import assert_never
 
-from sara_pacient.dominio.caso import Fato, Revelacao, Secao
+from sara_pacient.dominio.caso import Especialidade, Fato, Revelacao, Secao
 from sara_pacient.dominio.pacote import PacoteAtor
 
 # Só as seções que o ator vê (visivel_ao_ator); uma seção de gabarito aqui seria um rótulo morto.
+# O risco fica fora: o título dele depende da especialidade (_titulo_do_risco, ADR-0006) e ele vem
+# por último na ficha.
 TITULOS: dict[Secao, str] = {
     Secao.PACIENTE_DIZ: "O que você (paciente) sabe e conta",
     Secao.ACOMPANHANTE_DIZ: "O que o acompanhante sabe e conta",
@@ -18,7 +21,6 @@ TITULOS: dict[Secao, str] = {
     Secao.EXAME_FISICO: "Exame físico (só se o médico disser que examina)",
     Secao.EXAME_COMPLEMENTAR: "Exames já feitos (só se o médico pedir)",
     Secao.EVOLUCAO: "Evolução (só se o médico disser que o tempo passou)",
-    Secao.RISCO: "Pensamentos de morte, violência, autocuidado",
 }
 
 ROTULO_REVELACAO: dict[Revelacao, str] = {
@@ -27,31 +29,106 @@ ROTULO_REVELACAO: dict[Revelacao, str] = {
     Revelacao.CONDICIONAL: "condição",
 }
 
-# Regras do personagem, da skill casos-ai-first (seção 5). Não contêm nada do caso: o usuário
-# lê este arquivo ao colá-lo nas instruções do Project.
-INSTRUCOES = """\
+# Regras do personagem, da skill casos-ai-first (seção 5) e de references/<especialidade>.md.
+# Não contêm nada do caso: o usuário lê este arquivo ao colá-lo nas instruções do Project.
+ABERTURA_DAS_INSTRUCOES = """\
 # Você é um paciente numa consulta
 
 Quem fala com você é um médico em treinamento. Interprete o paciente descrito no arquivo
 `paciente.md` deste projeto, em português do Brasil, por voz. Nunca diga que é uma IA, nunca
 cite o arquivo e nunca saia do personagem, a menos que o médico diga "pausa".
-
-1. Responda só ao que foi perguntado. Conte sem ser perguntado apenas o que a ficha marca como
-   "conta sem ser perguntado".
-2. Fale como pessoa, não como prontuário: nada de termos técnicos ("alucinação", "ideação
-   suicida", "anedonia"). Descreva a experiência com suas palavras.
-3. Fidelidade: não invente nada que mude o diagnóstico, o risco ou o tratamento. Se o médico
-   perguntar algo que a ficha não traz, responda sem confirmar nem negar: "não sei dizer",
-   "não lembro bem". Nunca responda "não" ou "nunca" a algo que a ficha não diz que é ausente.
-4. Respeite as condições escritas na ficha (por exemplo, só contar algo na segunda pergunta).
-5. Seu estado muda a forma de falar (lento, curto, prolixo, desconfiado), não os fatos.
-6. Se o médico pedir para falar com o acompanhante, responda como ele, com o que a ficha dá a ele.
-7. Se o médico perguntar o que observa, descreva o que se vê e ouve, em linguagem leiga, sem
-   nomear a alteração.
-8. Exame físico: só o que a ficha traz; se não traz, "não descrito". Exames: se a ficha não traz,
-   "não foi feito". Passagem do tempo: só a evolução da ficha.
-9. Não avalie o médico nem dê dicas. Quando ele disser "encerrar consulta", despeça-se e pare.
 """
+
+REGRA_DA_PERGUNTA = """\
+Responda só ao que foi perguntado. Conte sem ser perguntado apenas o que a ficha marca como
+   "conta sem ser perguntado"."""
+
+# O exemplo de termo técnico muda com a especialidade; o resto da regra, não.
+REGRA_DA_FALA = """Fale como pessoa, não como prontuário: nada de termos técnicos como
+   {termos}. Descreva a experiência com suas palavras."""
+
+REGRAS_COMUNS = (
+    """Fidelidade: não invente nada que mude o diagnóstico, o risco ou o tratamento. Se o médico
+   perguntar algo que a ficha não traz, responda sem confirmar nem negar: "não sei dizer",
+   "não lembro bem". Nunca responda "não" ou "nunca" a algo que a ficha não diz que é ausente.""",
+    """Respeite as condições escritas na ficha (por exemplo, só contar algo na segunda
+   pergunta).""",
+    """Seu estado muda a forma de falar (lento, curto, prolixo, desconfiado), não os fatos.""",
+    """Se o médico pedir para falar com o acompanhante, responda como ele, com o que a ficha
+   dá a ele.""",
+    """Se o médico perguntar o que observa, descreva o que se vê e ouve, em linguagem leiga, sem
+   nomear a alteração.""",
+    """Exame físico: só o que a ficha traz; se não traz, "não descrito". Exames: se a ficha não
+   traz, "não foi feito". Passagem do tempo: só a evolução da ficha.""",
+)
+
+REGRA_FINAL = """\
+Não avalie o médico nem dê dicas. Quando ele disser "encerrar consulta", despeça-se e pare."""
+
+# references/dor.md da skill: linguagem do paciente, nota da dor, remédios e manobras. Em
+# 2026-11-13 a cópia pública da skill ainda trazia esse arquivo como "não preenchida"; o que se
+# confere hoje é a fonte dele: estudo-dor (Benzon, 6ª ed., caps. 2, 15, 18, 22 e 51; ADR-0006).
+# Divergência deliberada da referência (review de 2026-11-13, ADR-0006): sem número na ficha o
+# paciente não diz "é forte", e a regra de remédios não traz exemplo. Não restaurar ao sincronizar
+# com a skill; a mudança é que vai para lá.
+REGRAS_DA_DOR = (
+    """Nota da dor: só dê um número de 0 a 10 se o médico pedir, e o da ficha; sem número na ficha,
+   diga "não sei dar número". Pior, melhor e média, só se ele perguntar um por um.""",
+    """Remédios: fale como leigo, pelo nome da caixa ou como a ficha traz. Dose, horário e
+   quanto você toma de fato, só se a ficha traz.""",
+    """Manobra ou teste do exame que a ficha não traz é "não descrito", nunca "normal" nem
+   "negativo".""",
+)
+
+# Avaliação pré-anestésica (ADR-0007). Fonte: apostila do Portal Anestesia, TSA 2019, aula 09
+# (anamnese, vias aéreas, exame físico, fitoterápicos); a references/anestesiologia.md da skill
+# ainda não está preenchida. Sem exemplo de complicação nem de remédio nas regras: o ator repete
+# o exemplo como se fosse fato do caso.
+REGRAS_DA_ANESTESIOLOGIA = (
+    """Alergia: diga a que você é alérgico como a ficha diz. O que aconteceu quando tomou, só se o
+   médico perguntar e só o que a ficha traz; não julgue se era alergia mesmo.""",
+    """Anestesias anteriores, suas ou de parentes: conte o que aconteceu como você viveu ou como
+   lhe contaram, com palavras de leigo, sem dar nome à complicação.""",
+    """Remédios: fale como leigo, pelo nome da caixa ou como a ficha traz. Dose, horário e a
+   última vez que tomou, só se a ficha traz. Chá, suplemento e produto natural, para você, não
+   são remédio: só entram na resposta se o médico perguntar por eles ou se a ficha mandar
+   contar.""",
+    """Fôlego: responda com as atividades do dia a dia da ficha, como ela traz, sem medida técnica;
+   sem atividade na ficha, "não sei dizer".""",
+    """Exame da boca e do pescoço (abrir a boca, pôr a língua para fora, esticar o pescoço): só o
+   que a ficha traz. Manobra ou medida que a ficha não traz é "não descrita", nunca "normal".""",
+)
+
+
+def _instrucoes(especialidade: Especialidade) -> str:
+    match especialidade:
+        case Especialidade.PSIQUIATRIA:
+            termos = '"alucinação", "ideação suicida", "anedonia"'
+            proprias: tuple[str, ...] = ()
+        case Especialidade.DOR:
+            termos = '"neuropática", "alodinia", "irradiação", "sinal de alerta"'
+            proprias = REGRAS_DA_DOR
+        case Especialidade.ANESTESIOLOGIA:
+            termos = '"via aérea difícil", "apneia obstrutiva", "hipertermia maligna"'
+            proprias = REGRAS_DA_ANESTESIOLOGIA
+        case _:
+            assert_never(especialidade)
+    fala = REGRA_DA_FALA.format(termos=termos)
+    regras = (REGRA_DA_PERGUNTA, fala, *REGRAS_COMUNS, *proprias, REGRA_FINAL)
+    numeradas = (f"{n}. {regra}" for n, regra in enumerate(regras, start=1))
+    return ABERTURA_DAS_INSTRUCOES + "\n" + "\n".join(numeradas) + "\n"
+
+
+def _titulo_do_risco(especialidade: Especialidade) -> str:
+    match especialidade:
+        case Especialidade.PSIQUIATRIA:
+            return "Pensamentos de morte, violência, autocuidado"
+        case Especialidade.DOR:
+            return "Sinais de alerta, remédios e substâncias, pensamentos de morte"
+        case Especialidade.ANESTESIOLOGIA:
+            return "Anestesias anteriores e na família, alergias, fumo, álcool e outras substâncias"
+        case _:
+            assert_never(especialidade)
 
 
 class DestinoInvalidoError(OSError):
@@ -67,13 +144,16 @@ def escrever_pacote(pacote: PacoteAtor, destino: Path) -> tuple[Path, ...]:
 
     Exemplo: ``escrever_pacote(montar_pacote_ator(caso), Path("pacotes/caso-1"))``.
     """
+    # O texto vem antes de qualquer escrita: pacote que não vira texto não deixa pasta criada.
+    texto_das_instrucoes = _instrucoes(pacote.especialidade)
+    texto_da_ficha = _ficha_do_paciente(pacote)
     _conferir_destino(destino)
     instrucoes = destino / "instrucoes.md"
     paciente = destino / "paciente.md"
     try:
         destino.mkdir(parents=True, exist_ok=True)
-        _ = instrucoes.write_text(INSTRUCOES, encoding="utf-8")
-        _ = paciente.write_text(_ficha_do_paciente(pacote), encoding="utf-8")
+        _ = instrucoes.write_text(texto_das_instrucoes, encoding="utf-8")
+        _ = paciente.write_text(texto_da_ficha, encoding="utf-8")
     except OSError as erro:
         msg = f"{destino}: não foi possível escrever o pacote ({erro.strerror})"
         raise DestinoInvalidoError(msg) from erro
@@ -91,7 +171,8 @@ def _conferir_destino(destino: Path) -> None:
 
 def _ficha_do_paciente(pacote: PacoteAtor) -> str:
     linhas = ["# Ficha do paciente (não mostrar ao médico)", "", "## Abertura", "", pacote.abertura]
-    for secao, titulo in TITULOS.items():
+    titulos = {**TITULOS, Secao.RISCO: _titulo_do_risco(pacote.especialidade)}
+    for secao, titulo in titulos.items():
         fatos = [fato for fato in pacote.fatos if fato.secao is secao]
         if fatos:
             linhas += ["", f"## {titulo}", "", *(_linha_do_fato(fato) for fato in fatos)]

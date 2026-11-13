@@ -30,8 +30,12 @@ def _casos_versionaveis() -> list[Path]:
 CASOS = _casos_versionaveis()
 
 
-def test_o_exemplo_montado_e_encontrado() -> None:
-    assert RAIZ / "exemplos" / "caso-montado-exemplo.toml" in CASOS
+@pytest.mark.parametrize(
+    "nome",
+    ["caso-montado-exemplo.toml", "caso-montado-dor.toml", "caso-montado-anestesiologia.toml"],
+)
+def test_os_exemplos_montados_sao_encontrados(nome: str) -> None:
+    assert RAIZ / "exemplos" / nome in CASOS
 
 
 @pytest.mark.parametrize("caminho", CASOS, ids=[str(p.relative_to(RAIZ)) for p in CASOS])

@@ -16,7 +16,9 @@ uv sync
 uv run sara-pacient pacote exemplos/caso-montado-exemplo.toml pacotes/exemplo
 ```
 
-- Formato do caso: `exemplos/caso-montado-exemplo.toml` e ADR-0002.
+- Formato do caso: `exemplos/caso-montado-exemplo.toml` (psiquiatria),
+  `exemplos/caso-montado-dor.toml` (dor), `exemplos/caso-montado-anestesiologia.toml`
+  (avaliação pré-anestésica) e ADR-0002. Especialidades: ADR-0004, ADR-0006 e ADR-0007.
 - Decisões: `docs/adr/`. Regras para o agente: `AGENTS.md`. Portão: `make check`.
 - Método clínico: skill `casos-ai-first` (github.com/mateuscamp/claude-skills).
 

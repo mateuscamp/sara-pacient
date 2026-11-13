@@ -1,0 +1,165 @@
+# Caso MONTADO de anestesiologia (avaliação pré-anestésica), para teste e demonstração: não vem de
+# relato publicado. Formato: ADR-0002. Instruções e título de risco da anestesiologia: ADR-0007.
+
+id = "exemplo-montado-pre-anestesica"
+especialidade = "anestesiologia"
+abertura = """
+Ambulatório de avaliação pré-anestésica. Homem de 58 anos, com cirurgia de vesícula por vídeo
+marcada para daqui a duas semanas, vem com a esposa. Queixa: "O cirurgião mandou eu passar aqui
+antes de operar."
+"""
+
+[fonte]
+montado = true
+origem = """
+Montado a partir da apostila do Portal Anestesia, TSA 2019, aula 09 (Avaliação pré-operatória:
+anamnese, vias aéreas, exame físico, estado físico e fitoterápicos), para exemplo.
+"""
+
+[[fatos]]
+id = "dor-depois-de-gordura"
+secao = "paciente_diz"
+texto = "Há um ano tem crises de dor do lado direito da barriga depois de comida gordurosa."
+revelacao = "espontaneo"
+
+[[fatos]]
+id = "pressao-alta"
+secao = "paciente_diz"
+texto = """
+Tem pressão alta há dez anos; toma "o da pressão", um comprimido de losartana de manhã. Em casa
+a pressão fica em 13 por 8.
+"""
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "capsula-de-alho"
+secao = "paciente_diz"
+texto = "Toma duas cápsulas de alho por dia, por conta própria, há dois anos."
+revelacao = "condicional"
+condicao = "Só conta se perguntarem por chá, suplemento ou produto natural."
+
+[[fatos]]
+id = "folego"
+secao = "paciente_diz"
+texto = """
+Sobe os dois lances de escada do prédio sem parar, devagar, e chega um pouco ofegante; vai a pé
+ao mercado, a três quarteirões, sem dor no peito.
+"""
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "azia"
+secao = "paciente_diz"
+texto = "Tem azia quase toda noite e às vezes acorda com gosto azedo na boca."
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "ronco"
+secao = "acompanhante_diz"
+texto = """
+A esposa conta que ele ronca alto toda noite e às vezes para de respirar por alguns segundos;
+de dia cochila na frente da televisão.
+"""
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "inspecao"
+secao = "observavel"
+texto = """
+Homem gordo, de pescoço curto e grosso e barba cheia. Entra andando sem dificuldade e conversa
+sem perder o fôlego.
+"""
+revelacao = "espontaneo"
+
+[[fatos]]
+id = "sinais-e-medidas"
+secao = "exame_fisico"
+texto = """
+Pressão 150 por 90 na consulta, pulso 78 e regular, 104 kg e 1,72 m. Coração com ritmo regular,
+sem sopro; pulmões sem chiado.
+"""
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "boca-e-pescoco"
+secao = "exame_fisico"
+texto = """
+Abre a boca com três dedos de folga; dentes todos firmes, sem prótese. Com a boca aberta e a
+língua para fora, vê-se o céu da boca e só a base da campainha. Do queixo ao pomo de adão cabem
+quatro dedos. Dobra e estica o pescoço sem limitação.
+"""
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "eletrocardiograma"
+secao = "exame_complementar"
+texto = "Eletrocardiograma do mês passado: ritmo normal, sem alterações."
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "hernia-com-anestesia-nas-costas"
+secao = "risco"
+texto = """
+Operou uma hérnia na virilha há quinze anos, com anestesia nas costas, acordado. Nunca tomou
+anestesia geral.
+"""
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "alergia-a-morfina"
+secao = "risco"
+texto = "Diz que é alérgico a morfina."
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "o-que-houve-com-a-morfina"
+secao = "risco"
+texto = """
+Depois da cirurgia da hérnia vomitou a noite toda. Não teve coceira, mancha na pele, inchaço nem
+falta de ar.
+"""
+revelacao = "condicional"
+condicao = "Só conta se perguntarem o que aconteceu quando tomou a morfina."
+
+[[fatos]]
+id = "irmao-na-cirurgia-de-apendice"
+secao = "risco"
+texto = """
+Um irmão passou muito mal numa cirurgia de apêndice, com anestesia geral: teve febre muito alta,
+ficou com o corpo todo duro na mesa e foi para a UTI. Ninguém da família sabe o nome do que foi.
+"""
+revelacao = "condicional"
+condicao = "Só conta se perguntarem por problema com anestesia em alguém da família."
+
+[[fatos]]
+id = "cigarro-e-bebida"
+secao = "risco"
+texto = """
+Fumou um maço por dia durante vinte anos e parou há cinco. Bebe duas ou três cervejas no fim de
+semana. Não usa outras drogas.
+"""
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "leitura-do-caso"
+secao = "diagnostico_autores"
+texto = """
+Estado físico ASA II (hipertensão e obesidade, IMC 35). História familiar sugestiva de hipertermia
+maligna (febre e rigidez num irmão sob anestesia geral). Quatro dos cinco preditores de ventilação
+difícil sob máscara (mais de 55 anos, IMC acima de 26, barba, ronco) e Mallampati III. Ronco com
+pausas, obesidade, hipertensão e pescoço grosso sugerem apneia obstrutiva do sono. A "alergia" a
+morfina foi efeito colateral esperado. Refluxo predispõe a aspiração. Alho pode aumentar o
+sangramento.
+"""
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "pontos-chave"
+secao = "pontos_chave"
+texto = """
+Perguntar por anestesias anteriores e por problema com anestesia na família (condicional);
+perguntar o que aconteceu na "alergia"; perguntar por suplemento e produto natural (condicional);
+medir o fôlego por atividade do dia a dia; examinar boca e pescoço; ouvir a acompanhante sobre o
+ronco.
+"""
+revelacao = "se_perguntado"

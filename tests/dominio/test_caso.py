@@ -3,8 +3,10 @@
 import pytest
 
 from sara_pacient.dominio.caso import (
+    CampoDeFatoInvalidoError,
     Caso,
     CasoComIdRepetidoError,
+    Especialidade,
     EspecialidadeForaDoEscopoError,
     Fato,
     FatoCondicionalSemCondicaoError,
@@ -13,6 +15,7 @@ from sara_pacient.dominio.caso import (
     LicencaNaoAceitaError,
     Revelacao,
     Secao,
+    ler_especialidade,
     visivel_ao_ator,
 )
 
@@ -66,7 +69,7 @@ def test_caso_recusa_id_de_fato_repetido() -> None:
     fato = Fato("queixa", Secao.PACIENTE_DIZ, "dor", Revelacao.ESPONTANEO)
 
     with pytest.raises(CasoComIdRepetidoError, match="queixa"):
-        _ = Caso("c1", "psiquiatria", "abertura", MONTADO, (fato, fato))
+        _ = Caso("c1", Especialidade.PSIQUIATRIA, "abertura", MONTADO, (fato, fato))
 
 
 @pytest.mark.parametrize(
@@ -89,13 +92,90 @@ def test_id_de_fato_e_slug_nao_vazio(id_ruim: str) -> None:
 
 
 def test_especialidade_fora_do_escopo_e_recusada() -> None:
-    # ADR-0004: o sara-pacient cobre psiquiatria e dor; anestesiologia fica só na skill, em texto.
-    with pytest.raises(EspecialidadeForaDoEscopoError, match="anestesiologia"):
-        _ = Caso("c1", "anestesiologia", "abertura", MONTADO, ())
+    # ADR-0004 e ADR-0007: a lista é fechada em psiquiatria, dor e anestesiologia.
+    with pytest.raises(EspecialidadeForaDoEscopoError, match="cardiologia"):
+        _ = ler_especialidade("cardiologia")
 
 
-@pytest.mark.parametrize("especialidade", ["psiquiatria", "dor"])
-def test_psiquiatria_e_dor_sao_aceitas(especialidade: str) -> None:
-    caso = Caso("c1", especialidade, "abertura", MONTADO, ())
+def test_caso_recusa_especialidade_crua_fora_do_escopo() -> None:
+    # Achado A3 da auditoria: sem a recusa aqui, o texto cru só estourava no assert_never do
+    # canal, fora do `except` da CLI e depois de criar a pasta de destino.
+    with pytest.raises(EspecialidadeForaDoEscopoError, match="cardiologia"):
+        _ = Caso(
+            "c1",
+            "cardiologia",  # pyright: ignore[reportArgumentType]  # motivo: tipo errado de propósito
+            "abertura",
+            MONTADO,
+            (),
+        )
 
-    assert caso.especialidade == especialidade
+
+def test_caso_guarda_a_especialidade_como_enum_mesmo_vinda_em_texto() -> None:
+    # Achado B5 da review: o texto cru válido passava e ficava `str`; quem comparasse por
+    # identidade (`is Especialidade.DOR`) tomava o ramo errado sem erro nenhum.
+    caso = Caso(
+        "c1",
+        "dor",  # pyright: ignore[reportArgumentType]  # motivo: tipo errado de propósito
+        "abertura",
+        MONTADO,
+        (),
+    )
+
+    assert caso.especialidade is Especialidade.DOR
+
+
+@pytest.mark.parametrize(
+    ("texto", "especialidade"),
+    [
+        ("psiquiatria", Especialidade.PSIQUIATRIA),
+        ("dor", Especialidade.DOR),
+        # ADR-0007: a avaliação pré-anestésica é entrevista e passa a rodar por voz.
+        ("anestesiologia", Especialidade.ANESTESIOLOGIA),
+    ],
+)
+def test_especialidade_do_escopo_e_aceita(texto: str, especialidade: Especialidade) -> None:
+    assert ler_especialidade(texto) is especialidade
+
+
+def test_fato_guarda_secao_e_revelacao_como_enum_mesmo_vindas_em_texto() -> None:
+    # Achado C1 da review: o texto cru ficava `str`, e o canal filtra a ficha com
+    # `fato.secao is secao`: o fato sumia da ficha do paciente sem erro nenhum.
+    fato = Fato(
+        "f1",
+        "paciente_diz",  # pyright: ignore[reportArgumentType]  # motivo: tipo errado de propósito
+        "x",
+        "se_perguntado",  # pyright: ignore[reportArgumentType]  # motivo: tipo errado de propósito
+    )
+
+    assert fato.secao is Secao.PACIENTE_DIZ
+    assert fato.revelacao is Revelacao.SE_PERGUNTADO
+
+
+def test_fato_condicional_em_texto_cru_tambem_exige_condicao() -> None:
+    # Achado C1 da review: `"condicional" is Revelacao.CONDICIONAL` é falso, e a exigência da
+    # condição era contornada.
+    with pytest.raises(FatoCondicionalSemCondicaoError, match="f1"):
+        _ = Fato(
+            "f1",
+            Secao.PACIENTE_DIZ,
+            "x",
+            "condicional",  # pyright: ignore[reportArgumentType]  # motivo: tipo errado de propósito
+        )
+
+
+@pytest.mark.parametrize(
+    ("secao", "revelacao", "recusado"),
+    [("gabarito", "espontaneo", "gabarito"), ("paciente_diz", "sempre", "sempre")],
+)
+def test_fato_recusa_secao_ou_revelacao_fora_do_conjunto(
+    secao: str, revelacao: str, recusado: str
+) -> None:
+    # Achado E1 da review: com a classe-mãe aqui, trocar a exceção própria por
+    # CasoInvalidoError passava na suíte.
+    with pytest.raises(CampoDeFatoInvalidoError, match=recusado):
+        _ = Fato(
+            "f1",
+            secao,  # pyright: ignore[reportArgumentType]  # motivo: tipo errado de propósito
+            "x",
+            revelacao,  # pyright: ignore[reportArgumentType]  # motivo: tipo errado de propósito
+        )
