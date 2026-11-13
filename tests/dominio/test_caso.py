@@ -5,6 +5,7 @@ import pytest
 from sara_pacient.dominio.caso import (
     Caso,
     CasoComIdRepetidoError,
+    Especialidade,
     EspecialidadeForaDoEscopoError,
     Fato,
     FatoCondicionalSemCondicaoError,
@@ -13,6 +14,7 @@ from sara_pacient.dominio.caso import (
     LicencaNaoAceitaError,
     Revelacao,
     Secao,
+    ler_especialidade,
     visivel_ao_ator,
 )
 
@@ -66,7 +68,7 @@ def test_caso_recusa_id_de_fato_repetido() -> None:
     fato = Fato("queixa", Secao.PACIENTE_DIZ, "dor", Revelacao.ESPONTANEO)
 
     with pytest.raises(CasoComIdRepetidoError, match="queixa"):
-        _ = Caso("c1", "psiquiatria", "abertura", MONTADO, (fato, fato))
+        _ = Caso("c1", Especialidade.PSIQUIATRIA, "abertura", MONTADO, (fato, fato))
 
 
 @pytest.mark.parametrize(
@@ -91,11 +93,12 @@ def test_id_de_fato_e_slug_nao_vazio(id_ruim: str) -> None:
 def test_especialidade_fora_do_escopo_e_recusada() -> None:
     # ADR-0004: o sara-pacient cobre psiquiatria e dor; anestesiologia fica só na skill, em texto.
     with pytest.raises(EspecialidadeForaDoEscopoError, match="anestesiologia"):
-        _ = Caso("c1", "anestesiologia", "abertura", MONTADO, ())
+        _ = ler_especialidade("anestesiologia")
 
 
-@pytest.mark.parametrize("especialidade", ["psiquiatria", "dor"])
-def test_psiquiatria_e_dor_sao_aceitas(especialidade: str) -> None:
-    caso = Caso("c1", especialidade, "abertura", MONTADO, ())
-
-    assert caso.especialidade == especialidade
+@pytest.mark.parametrize(
+    ("texto", "especialidade"),
+    [("psiquiatria", Especialidade.PSIQUIATRIA), ("dor", Especialidade.DOR)],
+)
+def test_psiquiatria_e_dor_sao_aceitas(texto: str, especialidade: Especialidade) -> None:
+    assert ler_especialidade(texto) is especialidade

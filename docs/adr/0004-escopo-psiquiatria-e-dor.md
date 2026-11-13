@@ -20,7 +20,8 @@ cujos protocolos são de psiquiatria e dor.
 
 ## Decisão
 
-`Caso.especialidade` só aceita `psiquiatria` ou `dor`; outro valor é `EspecialidadeForaDoEscopoError`.
+`Caso.especialidade` só aceita `psiquiatria` ou `dor` (hoje o enum `Especialidade`, ADR-0006); outro
+valor é `EspecialidadeForaDoEscopoError`.
 As seções e as instruções do canal continuam as mesmas para as duas; se a dor pedir seção ou
 instrução própria, isso entra com teste e, se mudar o que o ator vê, com ADR.
 
@@ -32,6 +33,7 @@ instrução própria, isso entra com teste e, se mudar o que o ator vê, com ADR
 
 **Aceito conscientemente:** o título "Pensamentos de morte, violência, autocuidado" da seção de risco
 é de psiquiatria; num caso de dor ele ainda serve, mas pode pedir ajuste. Gatilho: o primeiro caso de dor.
+Atingido em 2026-11-10: as instruções e o título do risco passam a ser por especialidade (ADR-0006).
 
 ## Governança
 

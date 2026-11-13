@@ -15,10 +15,6 @@ LICENCAS_ACEITAS = (
     "/licenses/by-nc-sa/",
     "/publicdomain/zero/",
 )
-# Escopo do sara-pacient (ADR-0004): psiquiatria em foco, dor em segundo plano. Anestesiologia
-# fica só na skill casos-ai-first, em texto.
-ESPECIALIDADES = ("psiquiatria", "dor")
-
 # Id de fato em slug: a auditoria (ADR-0003) cita o fato pelo id, que não pode ser vazio nem
 # ambíguo.
 FORMATO_ID = re.compile(r"[a-z0-9]+(-[a-z0-9]+)*")
@@ -34,6 +30,17 @@ def licenca_aceita(url: str) -> bool:
         if url.startswith(host + "/"):
             return url.removeprefix(host).startswith(LICENCAS_ACEITAS)
     return False
+
+
+class Especialidade(StrEnum):
+    """Escopo do sara-pacient (ADR-0004): psiquiatria em foco, dor em segundo plano.
+
+    Anestesiologia fica só na skill casos-ai-first, em texto. A especialidade decide as instruções
+    do ator e o título da seção de risco (ADR-0006).
+    """
+
+    PSIQUIATRIA = "psiquiatria"
+    DOR = "dor"
 
 
 class Secao(StrEnum):
@@ -83,6 +90,19 @@ class EspecialidadeForaDoEscopoError(CasoInvalidoError):
 
 class CasoComIdRepetidoError(CasoInvalidoError):
     """Dois fatos com o mesmo id: a auditoria não saberia a qual a fala se liga."""
+
+
+def ler_especialidade(texto: str) -> Especialidade:
+    """Converte o texto do arquivo de caso na especialidade, ou recusa o que está fora do escopo.
+
+    Exemplo: ``ler_especialidade("dor")`` é ``Especialidade.DOR``.
+    """
+    try:
+        return Especialidade(texto)
+    except ValueError as erro:
+        aceitas = ", ".join(Especialidade)
+        msg = f"especialidade {texto!r} fora do escopo: {aceitas}"
+        raise EspecialidadeForaDoEscopoError(msg) from erro
 
 
 def visivel_ao_ator(secao: Secao) -> bool:
@@ -162,17 +182,12 @@ class Caso:
     """O relato estruturado: abertura, fonte e fatos."""
 
     id: str
-    especialidade: str
+    especialidade: Especialidade
     abertura: str
     fonte: Fonte
     fatos: tuple[Fato, ...]
 
     def __post_init__(self) -> None:
-        if self.especialidade not in ESPECIALIDADES:
-            msg = (
-                f"especialidade {self.especialidade!r} fora do escopo: {', '.join(ESPECIALIDADES)}"
-            )
-            raise EspecialidadeForaDoEscopoError(msg)
         repetidos = sorted(i for i, n in Counter(f.id for f in self.fatos).items() if n > 1)
         if repetidos:
             msg = f"caso {self.id!r}: ids de fato repetidos {repetidos}"

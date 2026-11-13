@@ -1,0 +1,121 @@
+# Caso MONTADO de dor, para teste e demonstração: não vem de relato publicado.
+# Formato: ADR-0002. Instruções e título de risco da dor: ADR-0006.
+
+id = "exemplo-montado-lombalgia"
+especialidade = "dor"
+abertura = """
+Ambulatório de dor, primeira consulta. Mulher de 48 anos, encaminhada pela unidade básica, vem
+sozinha. Queixa: "Essa dor nas costas não me deixa mais trabalhar."
+"""
+
+[fonte]
+montado = true
+origem = """
+Montado a partir da anamnese e dos sinais de alerta do Benzon, 6ª ed. (caps. 15 e 18) e do PCDT
+Dor Crônica 2024 (Quadro 1), para exemplo.
+"""
+
+[[fatos]]
+id = "dor-lombar-oito-meses"
+secao = "paciente_diz"
+texto = "Dor no fim das costas há oito meses, começou ao levantar uma caixa no trabalho."
+revelacao = "espontaneo"
+
+[[fatos]]
+id = "irradiacao-perna-esquerda"
+secao = "paciente_diz"
+texto = """
+A dor desce pela parte de trás da perna esquerda até o lado de fora do pé, como um choque;
+o pé às vezes formiga.
+"""
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "piora-sentada"
+secao = "paciente_diz"
+texto = "Piora sentada e ao se abaixar; melhora deitada de lado. Não acorda à noite com a dor."
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "nota-da-dor"
+secao = "paciente_diz"
+texto = "Dá nota 7 de 0 a 10 na média da semana; 9 no pior momento, 4 no melhor."
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "dipirona"
+secao = "paciente_diz"
+texto = "Toma dipirona 1 g quando a dor aperta, umas três vezes por dia; ajuda pouco."
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "tramadol-do-cunhado"
+secao = "paciente_diz"
+texto = "Toma à noite um comprimido de tramadol que o cunhado deu, há dois meses."
+revelacao = "condicional"
+condicao = "Só conta se perguntarem por outros remédios, inclusive os não receitados."
+
+[[fatos]]
+id = "medo-de-abaixar"
+secao = "paciente_diz"
+texto = "Acha que a coluna está gasta e tem medo de que exercício piore e ela trave de vez."
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "afastada"
+secao = "paciente_diz"
+texto = "É auxiliar de limpeza, afastada há três meses; dorme mal e anda irritada em casa."
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "inspecao"
+secao = "observavel"
+texto = """
+Roupa limpa e arrumada. Levanta da cadeira apoiando as duas mãos nos joelhos, devagar; anda
+mancando, poupando a perna esquerda; muda de posição na cadeira a cada poucos minutos.
+"""
+revelacao = "espontaneo"
+
+[[fatos]]
+id = "elevacao-perna-esquerda"
+secao = "exame_fisico"
+texto = """
+Elevação da perna estendida à esquerda reproduz a dor que desce até o pé a 40 graus; à direita,
+sem dor. Força e reflexos dos membros inferiores preservados; sensibilidade diminuída no dorso do
+pé esquerdo.
+"""
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "sem-febre-nem-perda-de-peso"
+secao = "risco"
+texto = """
+Sem febre, sem perda de peso, sem câncer prévio, sem alteração de urina ou fezes, sem uso de
+corticoide.
+"""
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "sem-pensamento-de-morte"
+secao = "risco"
+texto = "Nega pensamentos de morte; diz que o que quer é voltar a trabalhar."
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "diagnostico"
+secao = "diagnostico_autores"
+texto = """
+Lombalgia crônica com dor radicular L5 à esquerda (dor mista, nociceptiva e neuropática), sem
+sinal de alerta; uso de opioide não prescrito.
+"""
+revelacao = "se_perguntado"
+
+[[fatos]]
+id = "pontos-chave"
+secao = "pontos_chave"
+texto = """
+Caracterizar a irradiação e examinar com manobra; conferir sinais de alerta (todos ausentes, então
+sem sinal de alerta não há imagem de rotina); achar o tramadol do cunhado (condicional) e o medo de
+movimento; meta de função.
+"""
+revelacao = "se_perguntado"

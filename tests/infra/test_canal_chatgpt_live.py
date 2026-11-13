@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from sara_pacient.dominio.caso import Fato, Revelacao, Secao, visivel_ao_ator
+from sara_pacient.dominio.caso import Especialidade, Fato, Revelacao, Secao, visivel_ao_ator
 from sara_pacient.dominio.pacote import PacoteAtor
 from sara_pacient.infra.canal_chatgpt_live import (
     DestinoInvalidoError,
@@ -20,7 +20,7 @@ ALCOOL = Fato(
     Revelacao.CONDICIONAL,
     "Só conta na segunda pergunta.",
 )
-PACOTE = PacoteAtor("c1", "psiquiatria", "Ambulatório, 42 anos.", (INSONIA, ALCOOL))
+PACOTE = PacoteAtor("c1", Especialidade.PSIQUIATRIA, "Ambulatório, 42 anos.", (INSONIA, ALCOOL))
 
 
 def test_ficha_do_paciente_leva_cada_fato_com_a_regra_de_revelacao(tmp_path: Path) -> None:
@@ -56,7 +56,7 @@ def test_destino_com_arquivos_e_recusado_sem_tocar_nele(tmp_path: Path) -> None:
 @pytest.mark.parametrize("secao", [s for s in Secao if visivel_ao_ator(s)])
 def test_nenhum_fato_visivel_some_da_ficha(secao: Secao, tmp_path: Path) -> None:
     fato = Fato("f1", secao, f"marca-{secao.value}", Revelacao.SE_PERGUNTADO)
-    pacote = PacoteAtor("c1", "psiquiatria", "Abertura.", (fato,))
+    pacote = PacoteAtor("c1", Especialidade.PSIQUIATRIA, "Abertura.", (fato,))
 
     escritos = escrever_pacote(pacote, tmp_path / "pacote")
 
@@ -76,9 +76,53 @@ def test_destino_que_e_arquivo_e_recusado_com_erro_proprio(tmp_path: Path) -> No
 def test_texto_multilinha_vira_um_item_so_da_ficha(tmp_path: Path) -> None:
     # Achado 3 da review: a segunda linha saía fora do item, sem a regra de revelação.
     fato = Fato("f1", Secao.PACIENTE_DIZ, "linha um\nlinha dois", Revelacao.SE_PERGUNTADO)
-    pacote = PacoteAtor("c1", "psiquiatria", "Abertura.", (fato,))
+    pacote = PacoteAtor("c1", Especialidade.PSIQUIATRIA, "Abertura.", (fato,))
 
     escritos = escrever_pacote(pacote, tmp_path / "pacote")
 
     ficha = next(p for p in escritos if p.name == "paciente.md").read_text(encoding="utf-8")
     assert "- linha um linha dois (só se perguntarem)" in ficha
+
+
+def _arquivo(escritos: tuple[Path, ...], nome: str) -> str:
+    return next(p for p in escritos if p.name == nome).read_text(encoding="utf-8")
+
+
+DOR_NA_LOMBAR = Fato("lombar", Secao.PACIENTE_DIZ, "Dói nas costas.", Revelacao.ESPONTANEO)
+QUEDA = Fato("quedas", Secao.RISCO, "Caiu duas vezes no mês.", Revelacao.SE_PERGUNTADO)
+
+
+def test_instrucoes_de_dor_dao_os_termos_da_dor_e_a_regra_da_nota(tmp_path: Path) -> None:
+    # ADR-0006: o paciente de dor não diz "alodinia" nem dá nota de 0 a 10 sem pedirem.
+    pacote = PacoteAtor("c1", Especialidade.DOR, "Abertura.", (DOR_NA_LOMBAR,))
+
+    instrucoes = _arquivo(escrever_pacote(pacote, tmp_path / "pacote"), "instrucoes.md")
+
+    assert "alodinia" in instrucoes
+    assert "0 a 10" in instrucoes
+    assert "anedonia" not in instrucoes
+
+
+def test_instrucoes_de_psiquiatria_nao_ganham_as_regras_da_dor(tmp_path: Path) -> None:
+    instrucoes = _arquivo(escrever_pacote(PACOTE, tmp_path / "pacote"), "instrucoes.md")
+
+    assert "anedonia" in instrucoes
+    assert "alodinia" not in instrucoes
+    assert "0 a 10" not in instrucoes
+
+
+@pytest.mark.parametrize(
+    ("especialidade", "titulo"),
+    [
+        (Especialidade.PSIQUIATRIA, "## Pensamentos de morte, violência, autocuidado"),
+        (Especialidade.DOR, "## Sinais de alerta, remédios e substâncias, pensamentos de morte"),
+    ],
+)
+def test_titulo_do_risco_e_o_da_especialidade(
+    especialidade: Especialidade, titulo: str, tmp_path: Path
+) -> None:
+    pacote = PacoteAtor("c1", especialidade, "Abertura.", (QUEDA,))
+
+    ficha = _arquivo(escrever_pacote(pacote, tmp_path / "pacote"), "paciente.md")
+
+    assert f"{titulo}\n\n- Caiu duas vezes no mês." in ficha

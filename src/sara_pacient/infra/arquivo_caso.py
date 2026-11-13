@@ -9,7 +9,15 @@ from typing import ClassVar
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
-from sara_pacient.dominio.caso import Caso, CasoInvalidoError, Fato, Fonte, Revelacao, Secao
+from sara_pacient.dominio.caso import (
+    Caso,
+    CasoInvalidoError,
+    Fato,
+    Fonte,
+    Revelacao,
+    Secao,
+    ler_especialidade,
+)
 
 
 class ArquivoDeCasoInvalidoError(ValueError):
@@ -72,4 +80,5 @@ def _para_dominio(modelo: _CasoArquivo) -> Caso:
     f = modelo.fonte
     fonte = Fonte(f.montado, f.origem, f.pmid, f.pmcid, f.doi, f.licenca_url)
     fatos = tuple(Fato(x.id, x.secao, x.texto, x.revelacao, x.condicao) for x in modelo.fatos)
-    return Caso(modelo.id, modelo.especialidade, modelo.abertura.strip(), fonte, fatos)
+    especialidade = ler_especialidade(modelo.especialidade)
+    return Caso(modelo.id, especialidade, modelo.abertura.strip(), fonte, fatos)

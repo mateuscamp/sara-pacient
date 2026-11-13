@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from sara_pacient.dominio.caso import Revelacao, Secao
+from sara_pacient.dominio.caso import Especialidade, Revelacao, Secao
 from sara_pacient.infra.arquivo_caso import ArquivoDeCasoInvalidoError, ler_caso
 
 EXEMPLO = Path(__file__).parents[2] / "exemplos" / "caso-montado-exemplo.toml"
@@ -17,6 +17,15 @@ abertura = "Ambulatório."
 [fonte]
 montado = true
 origem = "teste"
+"""
+
+
+UM_FATO = """
+[[fatos]]
+id = "f1"
+secao = "paciente_diz"
+texto = "x"
+revelacao = "espontaneo"
 """
 
 
@@ -68,6 +77,19 @@ revelacao = "condicional"
 """
     )
     with pytest.raises(ArquivoDeCasoInvalidoError, match="condicao"):
+        _ = ler_caso(_escrever(tmp_path, corpo))
+
+
+def test_especialidade_vira_o_tipo_do_dominio(tmp_path: Path) -> None:
+    corpo = CABECALHO.replace('"psiquiatria"', '"dor"') + UM_FATO
+
+    assert ler_caso(_escrever(tmp_path, corpo)).especialidade is Especialidade.DOR
+
+
+def test_especialidade_fora_do_escopo_e_recusada_no_arquivo(tmp_path: Path) -> None:
+    # ADR-0004: anestesiologia fica só na skill; o arquivo não carrega.
+    corpo = CABECALHO.replace('"psiquiatria"', '"anestesiologia"') + UM_FATO
+    with pytest.raises(ArquivoDeCasoInvalidoError, match="anestesiologia"):
         _ = ler_caso(_escrever(tmp_path, corpo))
 
 

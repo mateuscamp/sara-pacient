@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 
-from sara_pacient.dominio.caso import Caso, Fato, visivel_ao_ator
+from sara_pacient.dominio.caso import Caso, Especialidade, Fato, visivel_ao_ator
 
 
 class PacoteSemFatosError(ValueError):
@@ -14,7 +14,7 @@ class PacoteAtor:
     """Abertura e fatos que o paciente simulado pode saber; nunca o gabarito."""
 
     caso_id: str
-    especialidade: str
+    especialidade: Especialidade
     abertura: str
     fatos: tuple[Fato, ...]
 

@@ -2,14 +2,22 @@
 
 import pytest
 
-from sara_pacient.dominio.caso import Caso, Fato, Fonte, Revelacao, Secao, visivel_ao_ator
+from sara_pacient.dominio.caso import (
+    Caso,
+    Especialidade,
+    Fato,
+    Fonte,
+    Revelacao,
+    Secao,
+    visivel_ao_ator,
+)
 from sara_pacient.dominio.pacote import PacoteSemFatosError, montar_pacote_ator
 
 MONTADO = Fonte(montado=True, origem="teste")
 
 
 def _caso(*fatos: Fato) -> Caso:
-    return Caso("c1", "psiquiatria", "Ambulatório, 40 anos.", MONTADO, fatos)
+    return Caso("c1", Especialidade.PSIQUIATRIA, "Ambulatório, 40 anos.", MONTADO, fatos)
 
 
 @pytest.mark.parametrize("secao", list(Secao))
