@@ -39,7 +39,9 @@ o que vai ao ator continua decidido só por `visivel_ao_ator`.
 ## Consequências
 
 **Ganha:** o paciente de dor recebe as regras de `references/dor.md`; as instruções de psiquiatria
-mantêm o conteúdo (só muda a quebra de uma linha).
+mantêm as regras: a regra 2 troca os parênteses dos exemplos por "termos técnicos como ..." e as
+regras 4, 6 e 8 mudam de quebra de linha (conferido em 2026-11-13, comparando o pacote gerado antes
+e depois).
 
 **Perde:** um canal por API, quando vier, precisa da mesma escolha por especialidade; o texto fica em
 `infra/`, e o segundo canal terá de reaproveitá-lo em vez de copiar.

@@ -190,6 +190,9 @@ class Caso:
     fatos: tuple[Fato, ...]
 
     def __post_init__(self) -> None:
+        # O tipo não segura texto cru em tempo de execução: sem a recusa aqui, especialidade fora
+        # do escopo só estourava no assert_never do canal, com a pasta de destino já criada.
+        _ = ler_especialidade(self.especialidade)
         repetidos = sorted(i for i, n in Counter(f.id for f in self.fatos).items() if n > 1)
         if repetidos:
             msg = f"caso {self.id!r}: ids de fato repetidos {repetidos}"

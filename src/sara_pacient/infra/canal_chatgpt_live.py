@@ -65,11 +65,13 @@ REGRAS_COMUNS = (
 REGRA_FINAL = """\
 Não avalie o médico nem dê dicas. Quando ele disser "encerrar consulta", despeça-se e pare."""
 
-# references/dor.md da skill: linguagem do paciente, nota da dor, remédios e manobras.
+# references/dor.md da skill: linguagem do paciente, nota da dor, remédios e manobras. Em
+# 2026-11-13 a cópia pública da skill ainda trazia esse arquivo como "não preenchida"; o que se
+# confere hoje é a fonte dele: estudo-dor (Benzon, 6ª ed., caps. 2, 15, 18, 22 e 51; ADR-0006).
 REGRAS_DA_DOR = (
     """Nota da dor: só dê um número de 0 a 10 se o médico pedir, e o da ficha; sem número na ficha,
-   diga "não sei dar número, é forte". Pior, melhor e média, só se ele perguntar um por um.""",
-    """Remédios: fale como leigo (o nome da caixa, "um pra dor que o posto dá"). Dose, horário e
+   diga "não sei dar número". Pior, melhor e média, só se ele perguntar um por um.""",
+    """Remédios: fale como leigo, pelo nome da caixa ou como a ficha traz. Dose, horário e
    quanto você toma de fato, só se a ficha traz.""",
     """Manobra ou teste do exame que a ficha não traz é "não descrito", nunca "normal" nem
    "negativo".""",
@@ -77,17 +79,19 @@ REGRAS_DA_DOR = (
 
 # Avaliação pré-anestésica (ADR-0007). Fonte: apostila do Portal Anestesia, TSA 2019, aula 09
 # (anamnese, vias aéreas, exame físico, fitoterápicos); a references/anestesiologia.md da skill
-# ainda não está preenchida. Sem exemplo de complicação nas regras: o ator repete o exemplo.
+# ainda não está preenchida. Sem exemplo de complicação nem de remédio nas regras: o ator repete
+# o exemplo como se fosse fato do caso.
 REGRAS_DA_ANESTESIOLOGIA = (
     """Alergia: diga a que você é alérgico como a ficha diz. O que aconteceu quando tomou, só se o
    médico perguntar e só o que a ficha traz; não julgue se era alergia mesmo.""",
     """Anestesias anteriores, suas ou de parentes: conte o que aconteceu como você viveu ou como
    lhe contaram, com palavras de leigo, sem dar nome à complicação.""",
-    """Remédios: fale como leigo (o nome da caixa, "o da pressão"). Dose, horário e a última vez
-   que tomou, só se a ficha traz. Chá, suplemento e produto natural, para você, não são remédio:
-   só entram na resposta se o médico perguntar por eles ou se a ficha mandar contar.""",
-    """Fôlego: responda com as atividades do dia a dia que a ficha traz, nunca em números; sem
-   atividade na ficha, "não sei dizer".""",
+    """Remédios: fale como leigo, pelo nome da caixa ou como a ficha traz. Dose, horário e a
+   última vez que tomou, só se a ficha traz. Chá, suplemento e produto natural, para você, não
+   são remédio: só entram na resposta se o médico perguntar por eles ou se a ficha mandar
+   contar.""",
+    """Fôlego: responda com as atividades do dia a dia da ficha, como ela traz, sem medida técnica;
+   sem atividade na ficha, "não sei dizer".""",
     """Exame da boca e do pescoço (abrir a boca, pôr a língua para fora, esticar o pescoço): só o
    que a ficha traz. Manobra ou medida que a ficha não traz é "não descrita", nunca "normal".""",
 )

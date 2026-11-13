@@ -96,14 +96,27 @@ def test_especialidade_fora_do_escopo_e_recusada() -> None:
         _ = ler_especialidade("cardiologia")
 
 
-def test_anestesiologia_entra_no_escopo() -> None:
-    # ADR-0007: a avaliação pré-anestésica é entrevista e passa a rodar por voz.
-    assert ler_especialidade("anestesiologia").value == "anestesiologia"
+def test_caso_recusa_especialidade_crua_fora_do_escopo() -> None:
+    # Achado A3 da auditoria: sem a recusa aqui, o texto cru só estourava no assert_never do
+    # canal, fora do `except` da CLI e depois de criar a pasta de destino.
+    with pytest.raises(EspecialidadeForaDoEscopoError, match="cardiologia"):
+        _ = Caso(
+            "c1",
+            "cardiologia",  # pyright: ignore[reportArgumentType]  # motivo: tipo errado de propósito
+            "abertura",
+            MONTADO,
+            (),
+        )
 
 
 @pytest.mark.parametrize(
     ("texto", "especialidade"),
-    [("psiquiatria", Especialidade.PSIQUIATRIA), ("dor", Especialidade.DOR)],
+    [
+        ("psiquiatria", Especialidade.PSIQUIATRIA),
+        ("dor", Especialidade.DOR),
+        # ADR-0007: a avaliação pré-anestésica é entrevista e passa a rodar por voz.
+        ("anestesiologia", Especialidade.ANESTESIOLOGIA),
+    ],
 )
-def test_psiquiatria_e_dor_sao_aceitas(texto: str, especialidade: Especialidade) -> None:
+def test_especialidade_do_escopo_e_aceita(texto: str, especialidade: Especialidade) -> None:
     assert ler_especialidade(texto) is especialidade

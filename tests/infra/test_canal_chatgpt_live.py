@@ -116,6 +116,10 @@ def test_instrucoes_de_psiquiatria_nao_ganham_as_regras_da_dor(tmp_path: Path) -
     [
         (Especialidade.PSIQUIATRIA, "## Pensamentos de morte, violência, autocuidado"),
         (Especialidade.DOR, "## Sinais de alerta, remédios e substâncias, pensamentos de morte"),
+        (
+            Especialidade.ANESTESIOLOGIA,
+            "## Anestesias anteriores e na família, alergias, fumo, álcool e outras substâncias",
+        ),
     ],
 )
 def test_titulo_do_risco_e_o_da_especialidade(
@@ -159,10 +163,68 @@ def test_instrucoes_das_outras_nao_ganham_as_regras_da_anestesiologia(
     assert "Alergia:" not in instrucoes
 
 
-def test_titulo_do_risco_da_anestesiologia(tmp_path: Path) -> None:
-    pacote = PacoteAtor("c1", Especialidade.ANESTESIOLOGIA, "Abertura.", (ALERGIA,))
+def _instrucoes_de(especialidade: Especialidade, destino: Path) -> str:
+    pacote = PacoteAtor("c1", especialidade, "Abertura.", (DOR_NA_LOMBAR,))
+    return _arquivo(escrever_pacote(pacote, destino), "instrucoes.md")
 
-    ficha = _arquivo(escrever_pacote(pacote, tmp_path / "pacote"), "paciente.md")
 
-    titulo = "## Anestesias anteriores e na família, alergias, fumo, álcool e outras substâncias"
-    assert f"{titulo}\n\n- Diz que é alérgico a morfina." in ficha
+def test_regra_do_folego_nao_proibe_os_numeros_da_ficha(tmp_path: Path) -> None:
+    # Achado A1 da auditoria: "nunca em números" fazia o ator sumir com "dois lances de escada",
+    # que é o dado da ficha. O que não se quer é medida técnica.
+    instrucoes = _instrucoes_de(Especialidade.ANESTESIOLOGIA, tmp_path / "pacote")
+
+    assert "nunca em números" not in instrucoes
+    assert "sem medida técnica" in instrucoes
+
+
+def test_regra_da_nota_da_dor_nao_afirma_intensidade(tmp_path: Path) -> None:
+    # Achado A2 da auditoria: "é forte" era intensidade que a ficha não traz, contra a regra da
+    # fidelidade das mesmas instruções.
+    instrucoes = _instrucoes_de(Especialidade.DOR, tmp_path / "pacote")
+
+    assert "é forte" not in instrucoes
+    assert '"não sei dar número"' in instrucoes
+
+
+@pytest.mark.parametrize("especialidade", list(Especialidade))
+def test_instrucoes_nao_trazem_exemplo_de_remedio(
+    especialidade: Especialidade, tmp_path: Path
+) -> None:
+    # Achado A5 da auditoria: o modelo de voz repete o exemplo como se fosse fato do caso.
+    instrucoes = _instrucoes_de(especialidade, tmp_path / "pacote")
+
+    assert "o da pressão" not in instrucoes
+    assert "que o posto dá" not in instrucoes
+
+
+# Um trecho de cada regra própria (e dos termos proibidos), numa linha só do texto: a auditoria
+# (achado A4) deu à dor três regras da anestesiologia e a suíte de três marcadores não viu.
+MARCAS_PROPRIAS: dict[Especialidade, tuple[str, ...]] = {
+    Especialidade.PSIQUIATRIA: ("anedonia",),
+    Especialidade.DOR: (
+        "alodinia",
+        "Nota da dor:",
+        "quanto você toma de fato",
+        "Manobra ou teste do exame",
+    ),
+    Especialidade.ANESTESIOLOGIA: (
+        "hipertermia maligna",
+        "Alergia:",
+        "Anestesias anteriores, suas ou de parentes",
+        "produto natural",
+        "Fôlego:",
+        "Exame da boca e do pescoço",
+    ),
+}
+
+
+@pytest.mark.parametrize("especialidade", list(Especialidade))
+def test_instrucoes_levam_todas_as_regras_proprias_e_nenhuma_das_outras(
+    especialidade: Especialidade, tmp_path: Path
+) -> None:
+    instrucoes = _instrucoes_de(especialidade, tmp_path / "pacote")
+
+    presentes = {
+        marca for marcas in MARCAS_PROPRIAS.values() for marca in marcas if marca in instrucoes
+    }
+    assert presentes == set(MARCAS_PROPRIAS[especialidade])
