@@ -68,6 +68,9 @@ Não avalie o médico nem dê dicas. Quando ele disser "encerrar consulta", desp
 # references/dor.md da skill: linguagem do paciente, nota da dor, remédios e manobras. Em
 # 2026-11-13 a cópia pública da skill ainda trazia esse arquivo como "não preenchida"; o que se
 # confere hoje é a fonte dele: estudo-dor (Benzon, 6ª ed., caps. 2, 15, 18, 22 e 51; ADR-0006).
+# Divergência deliberada da referência (review de 2026-11-13, ADR-0006): sem número na ficha o
+# paciente não diz "é forte", e a regra de remédios não traz exemplo. Não restaurar ao sincronizar
+# com a skill; a mudança é que vai para lá.
 REGRAS_DA_DOR = (
     """Nota da dor: só dê um número de 0 a 10 se o médico pedir, e o da ficha; sem número na ficha,
    diga "não sei dar número". Pior, melhor e média, só se ele perguntar um por um.""",
@@ -141,13 +144,16 @@ def escrever_pacote(pacote: PacoteAtor, destino: Path) -> tuple[Path, ...]:
 
     Exemplo: ``escrever_pacote(montar_pacote_ator(caso), Path("pacotes/caso-1"))``.
     """
+    # O texto vem antes de qualquer escrita: pacote que não vira texto não deixa pasta criada.
+    texto_das_instrucoes = _instrucoes(pacote.especialidade)
+    texto_da_ficha = _ficha_do_paciente(pacote)
     _conferir_destino(destino)
     instrucoes = destino / "instrucoes.md"
     paciente = destino / "paciente.md"
     try:
         destino.mkdir(parents=True, exist_ok=True)
-        _ = instrucoes.write_text(_instrucoes(pacote.especialidade), encoding="utf-8")
-        _ = paciente.write_text(_ficha_do_paciente(pacote), encoding="utf-8")
+        _ = instrucoes.write_text(texto_das_instrucoes, encoding="utf-8")
+        _ = paciente.write_text(texto_da_ficha, encoding="utf-8")
     except OSError as erro:
         msg = f"{destino}: não foi possível escrever o pacote ({erro.strerror})"
         raise DestinoInvalidoError(msg) from erro

@@ -7,6 +7,8 @@ import pytest
 from sara_pacient.dominio.caso import Especialidade, Fato, Revelacao, Secao, visivel_ao_ator
 from sara_pacient.dominio.pacote import PacoteAtor
 from sara_pacient.infra.canal_chatgpt_live import (
+    REGRAS_DA_ANESTESIOLOGIA,
+    REGRAS_DA_DOR,
     DestinoInvalidoError,
     DestinoOcupadoError,
     escrever_pacote,
@@ -73,6 +75,23 @@ def test_destino_que_e_arquivo_e_recusado_com_erro_proprio(tmp_path: Path) -> No
         _ = escrever_pacote(PACOTE, arquivo)
 
 
+def test_pacote_que_nao_vira_texto_nao_deixa_pasta_criada(tmp_path: Path) -> None:
+    # Achado B1 da review: o texto era montado depois do mkdir; especialidade crua fora do escopo
+    # estourava no assert_never e deixava a pasta de destino criada e vazia.
+    pacote = PacoteAtor(
+        "c1",
+        "cardiologia",  # pyright: ignore[reportArgumentType]  # motivo: tipo errado de propósito
+        "Abertura.",
+        (INSONIA,),
+    )
+    destino = tmp_path / "pacote"
+
+    with pytest.raises(AssertionError, match="cardiologia"):
+        _ = escrever_pacote(pacote, destino)
+
+    assert not destino.exists()
+
+
 def test_texto_multilinha_vira_um_item_so_da_ficha(tmp_path: Path) -> None:
     # Achado 3 da review: a segunda linha saía fora do item, sem a regra de revelação.
     fato = Fato("f1", Secao.PACIENTE_DIZ, "linha um\nlinha dois", Revelacao.SE_PERGUNTADO)
@@ -90,25 +109,6 @@ def _arquivo(escritos: tuple[Path, ...], nome: str) -> str:
 
 DOR_NA_LOMBAR = Fato("lombar", Secao.PACIENTE_DIZ, "Dói nas costas.", Revelacao.ESPONTANEO)
 QUEDA = Fato("quedas", Secao.RISCO, "Caiu duas vezes no mês.", Revelacao.SE_PERGUNTADO)
-
-
-def test_instrucoes_de_dor_dao_os_termos_da_dor_e_a_regra_da_nota(tmp_path: Path) -> None:
-    # ADR-0006: o paciente de dor não diz "alodinia" nem dá nota de 0 a 10 sem pedirem.
-    pacote = PacoteAtor("c1", Especialidade.DOR, "Abertura.", (DOR_NA_LOMBAR,))
-
-    instrucoes = _arquivo(escrever_pacote(pacote, tmp_path / "pacote"), "instrucoes.md")
-
-    assert "alodinia" in instrucoes
-    assert "0 a 10" in instrucoes
-    assert "anedonia" not in instrucoes
-
-
-def test_instrucoes_de_psiquiatria_nao_ganham_as_regras_da_dor(tmp_path: Path) -> None:
-    instrucoes = _arquivo(escrever_pacote(PACOTE, tmp_path / "pacote"), "instrucoes.md")
-
-    assert "anedonia" in instrucoes
-    assert "alodinia" not in instrucoes
-    assert "0 a 10" not in instrucoes
 
 
 @pytest.mark.parametrize(
@@ -130,37 +130,6 @@ def test_titulo_do_risco_e_o_da_especialidade(
     ficha = _arquivo(escrever_pacote(pacote, tmp_path / "pacote"), "paciente.md")
 
     assert f"{titulo}\n\n- Caiu duas vezes no mês." in ficha
-
-
-ALERGIA = Fato("alergia", Secao.RISCO, "Diz que é alérgico a morfina.", Revelacao.SE_PERGUNTADO)
-
-
-def test_instrucoes_de_anestesiologia_dao_os_termos_e_as_regras_dela(tmp_path: Path) -> None:
-    # ADR-0007: o paciente da pré-anestésica não diz "hipertermia maligna" nem mede o fôlego em
-    # número, e a manobra de boca e pescoço que a ficha não traz é "não descrita".
-    pacote = PacoteAtor("c1", Especialidade.ANESTESIOLOGIA, "Abertura.", (ALERGIA,))
-
-    instrucoes = _arquivo(escrever_pacote(pacote, tmp_path / "pacote"), "instrucoes.md")
-
-    assert "hipertermia maligna" in instrucoes
-    assert "Exame da boca e do pescoço" in instrucoes
-    assert "Alergia:" in instrucoes
-    assert "anedonia" not in instrucoes
-    assert "alodinia" not in instrucoes
-    assert "0 a 10" not in instrucoes
-
-
-@pytest.mark.parametrize("especialidade", [Especialidade.PSIQUIATRIA, Especialidade.DOR])
-def test_instrucoes_das_outras_nao_ganham_as_regras_da_anestesiologia(
-    especialidade: Especialidade, tmp_path: Path
-) -> None:
-    pacote = PacoteAtor("c1", especialidade, "Abertura.", (DOR_NA_LOMBAR,))
-
-    instrucoes = _arquivo(escrever_pacote(pacote, tmp_path / "pacote"), "instrucoes.md")
-
-    assert "hipertermia maligna" not in instrucoes
-    assert "Exame da boca e do pescoço" not in instrucoes
-    assert "Alergia:" not in instrucoes
 
 
 def _instrucoes_de(especialidade: Especialidade, destino: Path) -> str:
@@ -197,22 +166,23 @@ def test_instrucoes_nao_trazem_exemplo_de_remedio(
     assert "que o posto dá" not in instrucoes
 
 
-# Um trecho de cada regra própria (e dos termos proibidos), numa linha só do texto: a auditoria
-# (achado A4) deu à dor três regras da anestesiologia e a suíte de três marcadores não viu.
-MARCAS_PROPRIAS: dict[Especialidade, tuple[str, ...]] = {
+# As regras próprias vêm direto das tuplas do canal (achado B4 da review): com a tabela de
+# marcadores mantida à mão, regra nova sem marcador ficava fora do teste de isolamento.
+REGRAS_PROPRIAS: dict[Especialidade, tuple[str, ...]] = {
+    Especialidade.PSIQUIATRIA: (),
+    Especialidade.DOR: REGRAS_DA_DOR,
+    Especialidade.ANESTESIOLOGIA: REGRAS_DA_ANESTESIOLOGIA,
+}
+
+# Os termos proibidos e os trechos que os quatro testes antigos de isolamento afirmavam, um por um
+# (ADR-0006, ADR-0007). Ficam como âncora: se uma tupla de regras esvaziar, o teste das tuplas
+# passa sozinho.
+TRECHOS_FIXOS: dict[Especialidade, tuple[str, ...]] = {
     Especialidade.PSIQUIATRIA: ("anedonia",),
-    Especialidade.DOR: (
-        "alodinia",
-        "Nota da dor:",
-        "quanto você toma de fato",
-        "Manobra ou teste do exame",
-    ),
+    Especialidade.DOR: ("alodinia", "0 a 10"),
     Especialidade.ANESTESIOLOGIA: (
         "hipertermia maligna",
         "Alergia:",
-        "Anestesias anteriores, suas ou de parentes",
-        "produto natural",
-        "Fôlego:",
         "Exame da boca e do pescoço",
     ),
 }
@@ -224,7 +194,25 @@ def test_instrucoes_levam_todas_as_regras_proprias_e_nenhuma_das_outras(
 ) -> None:
     instrucoes = _instrucoes_de(especialidade, tmp_path / "pacote")
 
-    presentes = {
-        marca for marcas in MARCAS_PROPRIAS.values() for marca in marcas if marca in instrucoes
-    }
-    assert presentes == set(MARCAS_PROPRIAS[especialidade])
+    todas = {regra for regras in REGRAS_PROPRIAS.values() for regra in regras}
+    assert {regra for regra in todas if regra in instrucoes} == set(REGRAS_PROPRIAS[especialidade])
+
+
+@pytest.mark.parametrize("especialidade", list(Especialidade))
+def test_instrucoes_levam_os_trechos_fixos_da_especialidade_e_nenhum_das_outras(
+    especialidade: Especialidade, tmp_path: Path
+) -> None:
+    instrucoes = _instrucoes_de(especialidade, tmp_path / "pacote")
+
+    todos = {trecho for trechos in TRECHOS_FIXOS.values() for trecho in trechos}
+    assert {trecho for trecho in todos if trecho in instrucoes} == set(TRECHOS_FIXOS[especialidade])
+
+
+def test_regras_de_remedio_nao_trazem_exemplo_entre_aspas() -> None:
+    # Achado B6 da review: fixar só as duas frases removidas deixava passar qualquer outro exemplo.
+    # Exemplo nas regras vem entre aspas, e o modelo de voz o repete como fato do caso.
+    proprias = (*REGRAS_DA_DOR, *REGRAS_DA_ANESTESIOLOGIA)
+    de_remedio = [regra for regra in proprias if regra.startswith("Remédios:")]
+
+    assert len(de_remedio) == 2
+    assert [regra for regra in de_remedio if '"' in regra] == []

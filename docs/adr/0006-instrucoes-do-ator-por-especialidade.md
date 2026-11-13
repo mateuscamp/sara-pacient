@@ -48,6 +48,10 @@ e depois).
 
 **Aceito conscientemente:** as regras da dor nasceram do livro, não de uma sessão. Gatilho: a primeira
 sessão de dor por voz revisa as regras e o título, e o que mudar entra aqui e na skill.
+Mudou antes da primeira sessão, na review de 2026-11-13: sem número na ficha o paciente diz só "não
+sei dar número" (o "é forte" afirmava intensidade que o caso não traz), e a regra de remédios perdeu
+o exemplo de medicamento (o modelo de voz repete o exemplo como fato). O código está à frente da
+`references/dor.md`, que ainda precisa receber as duas mudanças.
 
 ## Governança
 

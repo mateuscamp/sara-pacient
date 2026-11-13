@@ -109,6 +109,20 @@ def test_caso_recusa_especialidade_crua_fora_do_escopo() -> None:
         )
 
 
+def test_caso_guarda_a_especialidade_como_enum_mesmo_vinda_em_texto() -> None:
+    # Achado B5 da review: o texto cru válido passava e ficava `str`; quem comparasse por
+    # identidade (`is Especialidade.DOR`) tomava o ramo errado sem erro nenhum.
+    caso = Caso(
+        "c1",
+        "dor",  # pyright: ignore[reportArgumentType]  # motivo: tipo errado de propósito
+        "abertura",
+        MONTADO,
+        (),
+    )
+
+    assert caso.especialidade is Especialidade.DOR
+
+
 @pytest.mark.parametrize(
     ("texto", "especialidade"),
     [

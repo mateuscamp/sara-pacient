@@ -58,8 +58,8 @@ tende a repetir o exemplo como se fosse fato do caso. As seções e a visibilida
 **Perde:** o ADR-0004 deixa de valer na parte "anestesiologia fica só na skill"; a lista continua
 fechada, e `cardiologia` ou outro valor segue recusado. Crise intraoperatória continua fora.
 O sara-aux-diag só tem protocolos de psiquiatria e dor (ADR-0005): a sessão de pré-anestésica não
-ganha cobertura nem FALTA de lá, e "o que faltou perguntar" fica com a leitura dos pontos-chave do
-caso, até existir protocolo de anestesiologia no sara-aux-diag.
+ganha cobertura nem FALTA de lá. Como se corrige "o que faltou perguntar" nesta especialidade está
+em aberto, à espera de decisão do usuário.
 
 **Aceito conscientemente:**
 
